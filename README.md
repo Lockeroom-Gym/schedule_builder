@@ -69,5 +69,5 @@ Three tables are created by migrations:
 - **Spots** = `coaches_assigned × clients_per_coach` (dynamic, not stored)
 - **Session count** = actual class appearances in `schedule_session_coaches` for the week
 - **Bracket warning** = assigned count outside `[min, max]` from session bracket
-- **Locked period** = `view_schedule_periods_effective.is_locked_effective = true`
+- **Locked period** = `is_locked = true` or `phase = 'locked'`
 - **Period phases**: Build (>6wks), Booking (4–6wks), Manage (<4wks)

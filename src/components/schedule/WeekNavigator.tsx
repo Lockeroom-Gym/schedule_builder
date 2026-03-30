@@ -42,7 +42,7 @@ export function WeekNavigator({ periods, selectedPeriodId, onPeriodChange, phase
           {currentPeriod ? formatWeekLabel(currentPeriod.week_start) : 'Select a period'}
         </span>
         {currentPeriod && (
-          <PeriodBadge phase={phase} isLocked={currentPeriod.is_locked_effective} />
+          <PeriodBadge phase={phase} isLocked={currentPeriod.is_locked || phase === 'locked'} />
         )}
       </div>
 

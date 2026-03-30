@@ -87,4 +87,4 @@ Based on `week_start` vs Today (aligned to start of week):
 - **Draft Window:** > 4 weeks out. Full editing allowed for schedule and staff preferences.
 - **Live (Booking Open):** 0–4 weeks out. Schedule is active and members can book in. Staff preferences are locked.
 - **Locked:** Past weeks (< 0 weeks out). All past schedules are locked and cannot be changed.
-- **Hard Lock:** Controlled by `view_schedule_periods_effective.is_locked_effective`. When true, all UI mutations (Add, Remove, Assign, Delete) are disabled, overriding the phase.
+- **Hard Lock:** Controlled by `is_locked`. When true, all UI mutations (Add, Remove, Assign, Delete) are disabled, overriding the phase.
