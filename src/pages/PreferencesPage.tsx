@@ -6,7 +6,7 @@ import { PreferenceTable } from '../components/preferences/PreferenceTable'
 import { ComplianceCard } from '../components/preferences/ComplianceCard'
 import { PageLoader } from '../components/ui/LoadingSpinner'
 import { EmptyState } from '../components/ui/EmptyState'
-import { isWithinSixWeeks } from '../lib/dateUtils'
+import { getPeriodPhase } from '../lib/dateUtils'
 
 interface PreferencesPageProps {
   selectedPeriodId: string
@@ -19,7 +19,7 @@ export function PreferencesPage({ selectedPeriodId }: PreferencesPageProps) {
   const { data: staff = [] } = useStaff(false)
 
   const selectedPeriod = periods?.find((p) => p.id === selectedPeriodId)
-  const isLocked = selectedPeriod ? isWithinSixWeeks(selectedPeriod.week_start) : false
+  const isLocked = selectedPeriod ? getPeriodPhase(selectedPeriod.week_start) !== 'draft' : false
 
   const staffMap = useMemo(() => {
     const m: Record<string, { name: string | null; colour: string | null }> = {}

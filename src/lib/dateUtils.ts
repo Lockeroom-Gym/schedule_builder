@@ -42,10 +42,15 @@ export function prevWeek(weekStart: string): string {
 export function getPeriodPhase(weekStart: string): PeriodPhase {
   const start = parseISO(weekStart)
   const today = new Date()
-  const weeksUntil = differenceInWeeks(start, today)
-  if (weeksUntil > 6) return 'build'
-  if (weeksUntil >= 4) return 'booking'
-  return 'manage'
+  today.setHours(0, 0, 0, 0)
+  
+  // Align today to the start of the current week (Monday)
+  const todayWeekStart = startOfWeek(today, { weekStartsOn: 1 })
+  const weeksUntil = differenceInWeeks(start, todayWeekStart)
+
+  if (weeksUntil < 0) return 'locked'
+  if (weeksUntil < 4) return 'live'
+  return 'draft'
 }
 
 export function formatTime(time: string): string {
@@ -88,10 +93,4 @@ export function getDayNameFromDate(dateStr: string): DayName {
     1: 'MON', 2: 'TUE', 3: 'WED', 4: 'THU', 5: 'FRI', 6: 'SAT', 0: 'SUN',
   }
   return map[dayOfWeek] ?? 'MON'
-}
-
-export function isWithinSixWeeks(weekStart: string): boolean {
-  const start = parseISO(weekStart)
-  const today = new Date()
-  return differenceInWeeks(start, today) < 6
 }

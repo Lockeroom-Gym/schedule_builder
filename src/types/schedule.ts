@@ -31,7 +31,7 @@ export interface CoachSessionCount {
   role: string
 }
 
-export type PeriodPhase = 'build' | 'booking' | 'manage' | 'locked'
+export type PeriodPhase = 'draft' | 'live' | 'locked'
 
 export interface FilterState {
   gyms: string[]

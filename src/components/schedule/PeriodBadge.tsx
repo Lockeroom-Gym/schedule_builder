@@ -7,9 +7,8 @@ interface PeriodBadgeProps {
 }
 
 const phaseConfig: Record<PeriodPhase, { label: string; variant: 'green' | 'blue' | 'amber' | 'red' }> = {
-  build: { label: 'Build Phase', variant: 'green' },
-  booking: { label: 'Booking Window', variant: 'blue' },
-  manage: { label: 'Manage Phase', variant: 'amber' },
+  draft: { label: 'Draft Window', variant: 'amber' },
+  live: { label: 'Live (Booking Open)', variant: 'green' },
   locked: { label: 'Locked', variant: 'red' },
 }
 
