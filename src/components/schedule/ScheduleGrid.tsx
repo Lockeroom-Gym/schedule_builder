@@ -41,7 +41,7 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
   const selectedPeriod = periods.find((p) => p.id === selectedPeriodId)
   const weekStart = selectedPeriod?.week_start ?? null
   const isLocked = selectedPeriod?.is_locked_effective ?? false
-  const phase = weekStart ? getPeriodPhase(weekStart) : 'build'
+  const phase = weekStart ? getPeriodPhase(weekStart) : 'draft'
 
   const { data: staff = [] } = useStaff(true)
   const { data: brackets = [] } = useStaffBrackets()

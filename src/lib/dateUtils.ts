@@ -49,7 +49,7 @@ export function getPeriodPhase(weekStart: string): PeriodPhase {
   const weeksUntil = differenceInWeeks(start, todayWeekStart)
 
   if (weeksUntil < 0) return 'locked'
-  if (weeksUntil < 4) return 'live'
+  if (weeksUntil <= 4) return 'live'
   return 'draft'
 }
 
