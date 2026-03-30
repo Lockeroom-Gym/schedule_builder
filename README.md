@@ -52,6 +52,10 @@ A staff scheduling dashboard for Lockeroom gym operations. Managers build weekly
    - `VITE_SUPABASE_ANON_KEY`
 4. Deploy — `vercel.json` handles SPA routing automatically
 
+**Blank page on Vercel?** Vite bakes `VITE_*` variables in at **build time**. If they were missing when the deployment built, the old bundle had no Supabase config (and previously crashed before React rendered). Add both variables for **Production**, then **Redeploy** from the Deployments tab. After the fix in the app, a misconfigured build shows an on-screen “Supabase is not configured” message instead of a white screen.
+
+See `.env.example` for the exact variable names.
+
 ## Database Tables (New)
 
 Three tables are created by migrations:
