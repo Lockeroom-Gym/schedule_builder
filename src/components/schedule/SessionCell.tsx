@@ -182,13 +182,14 @@ export function SessionCell({
           <input
             ref={timeInputRef}
             type="time"
+            lang="en-GB"
             value={draftTime}
             onChange={(e) => setDraftTime(e.target.value)}
             onKeyDown={handleTimeKeyDown}
             onBlur={saveTime}
             onClick={(e) => e.stopPropagation()}
             disabled={updateTime.isPending}
-            className="text-[9px] font-bold text-gray-800 bg-white border border-blue-400 rounded px-0.5 w-[58px] leading-none flex-shrink-0 outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            className="text-[10px] font-bold text-gray-800 bg-white border border-blue-400 rounded px-1 py-0.5 w-[76px] leading-none flex-shrink-0 outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
           />
         ) : (
           <button
