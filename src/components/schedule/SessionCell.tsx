@@ -6,6 +6,8 @@ import { CoachAssignDropdown } from './CoachAssignDropdown'
 import { useDeleteSession } from '../../hooks/useMutateSession'
 import { GYM_COLORS } from '../../lib/constants'
 
+const FLOW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
+
 interface SessionCellProps {
   session: SessionWithCoaches
   weekStart: string
@@ -15,6 +17,8 @@ interface SessionCellProps {
   showCoaches: boolean
   isSelected: boolean
   onToggleSelect: () => void
+  flowLevel?: number
+  allSessions: SessionWithCoaches[]
 }
 
 export function SessionCell({
@@ -26,6 +30,8 @@ export function SessionCell({
   showCoaches,
   isSelected,
   onToggleSelect,
+  flowLevel = 0,
+  allSessions,
 }: SessionCellProps) {
   const [assigningSlot, setAssigningSlot] = useState<number | null>(null)
   const deleteSession = useDeleteSession()
@@ -91,6 +97,17 @@ export function SessionCell({
           <span className="font-semibold text-gray-700">{session.total_spots}</span>sp
         </span>
 
+        {/* Flow level badge — only shown for staggered (non-A-flow) sessions */}
+        {flowLevel > 0 && (
+          <span
+            className="text-[8px] font-bold px-1 py-0.5 rounded leading-none flex-shrink-0"
+            style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}
+            title={`${FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}-flow (staggered session)`}
+          >
+            {FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}
+          </span>
+        )}
+
         {/* Peak indicator */}
         {session.is_peak && (
           <span className="text-[8px] text-amber-600 font-bold leading-none flex-shrink-0">PK</span>
@@ -150,6 +167,8 @@ export function SessionCell({
                   staff={staff}
                   leaveData={leaveData}
                   onClose={() => setAssigningSlot(null)}
+                  currentSession={session}
+                  allSessions={allSessions}
                 />
               )}
             </div>

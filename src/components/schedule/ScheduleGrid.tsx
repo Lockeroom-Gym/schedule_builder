@@ -18,6 +18,7 @@ import {
   formatTime,
   formatDateShort,
 } from '../../lib/dateUtils'
+import { computeFlowLevels } from '../../lib/scheduleUtils'
 import { DAYS_OF_WEEK } from '../../lib/constants'
 import type { SchedulePeriodEffective, DayName } from '../../types/database'
 
@@ -76,6 +77,9 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
     }
     return map
   }, [filteredSessions])
+
+  // Flow level for each session (0=A, 1=B, 2=C, …) computed per gym+day group
+  const flowLevelMap = useMemo(() => computeFlowLevels(filteredSessions), [filteredSessions])
 
   // Leave indexed by date string
   const leaveByDate = useMemo(() => {
@@ -349,19 +353,28 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
                       className="flex-1 border-r border-gray-100 p-1.5 space-y-1"
                       style={{ minWidth: 150 }}
                     >
-                      {cellSessions.map((session) => (
-                        <SessionCell
-                          key={session.id}
-                          session={session}
-                          weekStart={weekStart ?? ''}
-                          staff={staff}
-                          leaveData={leaveData}
-                          isLocked={isLocked}
-                          showCoaches={showCoaches}
-                          isSelected={selectedSessionIds.has(session.id)}
-                          onToggleSelect={() => toggleSession(session.id)}
-                        />
-                      ))}
+                      {cellSessions.map((session) => {
+                        const flowLevel = flowLevelMap.get(session.id) ?? 0
+                        return (
+                          <div
+                            key={session.id}
+                            style={{ marginLeft: flowLevel * 12 }}
+                          >
+                            <SessionCell
+                              session={session}
+                              weekStart={weekStart ?? ''}
+                              staff={staff}
+                              leaveData={leaveData}
+                              isLocked={isLocked}
+                              showCoaches={showCoaches}
+                              isSelected={selectedSessionIds.has(session.id)}
+                              onToggleSelect={() => toggleSession(session.id)}
+                              flowLevel={flowLevel}
+                              allSessions={sessions ?? []}
+                            />
+                          </div>
+                        )
+                      })}
                     </div>
                   )
                 })}

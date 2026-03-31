@@ -86,3 +86,89 @@ export function hexToRgba(hex: string, alpha: number): string {
   if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(99,102,241,${alpha})`
   return `rgba(${r},${g},${b},${alpha})`
 }
+
+// Converts "HH:MM:SS" or "HH:MM" to total minutes since midnight
+function timeStringToMinutes(time: string): number {
+  const parts = time.split(':')
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)
+}
+
+const DEFAULT_DURATION_MINUTES = 40
+
+/**
+ * For each (day_name, gym) group, assigns a flow level to every session using
+ * a greedy interval scheduling algorithm:
+ *   - Level 0 = A-flow (no overlap with any earlier session in the same gym/day)
+ *   - Level 1 = B-flow, Level 2 = C-flow, etc.
+ *
+ * Returns a Map<session_id, flowLevel>.
+ */
+export function computeFlowLevels(sessions: SessionWithCoaches[]): Map<string, number> {
+  const result = new Map<string, number>()
+
+  // Group by (day_name, gym) — flows are independent per gym
+  const groups = new Map<string, SessionWithCoaches[]>()
+  for (const s of sessions) {
+    const key = `${s.day_name}::${s.gym}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(s)
+  }
+
+  for (const group of groups.values()) {
+    const sorted = [...group].sort((a, b) => a.session_time.localeCompare(b.session_time))
+
+    // Each entry tracks the end-time (minutes) of the last session assigned to that flow slot
+    const slotEnds: number[] = []
+
+    for (const session of sorted) {
+      const startMin = timeStringToMinutes(session.session_time)
+      const duration = session.session_type?.duration_minutes ?? DEFAULT_DURATION_MINUTES
+      const endMin = startMin + duration
+
+      let assigned = false
+      for (let i = 0; i < slotEnds.length; i++) {
+        if (slotEnds[i] <= startMin) {
+          result.set(session.id, i)
+          slotEnds[i] = endMin
+          assigned = true
+          break
+        }
+      }
+
+      if (!assigned) {
+        result.set(session.id, slotEnds.length)
+        slotEnds.push(endMin)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Returns all sessions (from allSessions) where:
+ *   - The given coach is already assigned
+ *   - The session is on the same day as targetSession
+ *   - The time windows overlap (using duration_minutes)
+ */
+export function findCoachTimeConflicts(
+  coachId: string,
+  targetSession: SessionWithCoaches,
+  allSessions: SessionWithCoaches[],
+): SessionWithCoaches[] {
+  const targetStart = timeStringToMinutes(targetSession.session_time)
+  const targetDuration = targetSession.session_type?.duration_minutes ?? DEFAULT_DURATION_MINUTES
+  const targetEnd = targetStart + targetDuration
+
+  return allSessions.filter((s) => {
+    if (s.id === targetSession.id) return false
+    if (s.day_name !== targetSession.day_name) return false
+    if (!s.coaches.some((c) => c.coach_id === coachId)) return false
+
+    const existingStart = timeStringToMinutes(s.session_time)
+    const existingDuration = s.session_type?.duration_minutes ?? DEFAULT_DURATION_MINUTES
+    const existingEnd = existingStart + existingDuration
+
+    return existingStart < targetEnd && targetStart < existingEnd
+  })
+}

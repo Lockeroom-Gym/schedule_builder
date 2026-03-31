@@ -59,6 +59,7 @@ export interface SystemSessionType {
   color_hex: string
   sort_order: number
   created_at: string
+  duration_minutes: number | null
 }
 
 export interface SystemSessionGymCapacity {
