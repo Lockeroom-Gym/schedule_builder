@@ -5,7 +5,7 @@ import { SchedulePage } from './pages/SchedulePage'
 import { PreferencesPage } from './pages/PreferencesPage'
 import { CoachesPage } from './pages/CoachesPage'
 import { useSchedulePeriods } from './hooks/useSchedulePeriods'
-import { getPeriodPhase, formatWeekStartKey } from './lib/dateUtils'
+import { formatWeekStartKey } from './lib/dateUtils'
 
 export default function AppRoutes() {
   const [selectedPeriodId, setSelectedPeriodId] = useState('')
