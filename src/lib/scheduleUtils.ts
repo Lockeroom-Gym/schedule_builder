@@ -37,13 +37,15 @@ export function buildCoachSessionCounts(
 
   return staff.map((coach) => {
     const count = countMap[coach.id] ?? 0
-    const target = coach.rm_ceiling ?? null
-    const delta = target !== null ? count - target : null
     const bracketInfo = bracketMap[coach.id]
     const parsed = parseBracket(bracketInfo?.session_bracket_name ?? null)
+    
+    // Target is now the average of the session bracket (e.g. 30_35 -> 32.5)
+    const target = parsed ? (parsed.min + parsed.max) / 2 : null
+    const delta = target !== null ? count - target : null
 
     let hasWarning = false
-    if (parsed && target !== null) {
+    if (parsed) {
       hasWarning = count < parsed.min || count > parsed.max
     }
 

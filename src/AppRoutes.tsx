@@ -5,6 +5,7 @@ import { SchedulePage } from './pages/SchedulePage'
 import { PreferencesPage } from './pages/PreferencesPage'
 import { CoachesPage } from './pages/CoachesPage'
 import { useSchedulePeriods } from './hooks/useSchedulePeriods'
+import { getPeriodPhase, formatWeekStartKey } from './lib/dateUtils'
 
 export default function AppRoutes() {
   const [selectedPeriodId, setSelectedPeriodId] = useState('')
@@ -12,9 +13,13 @@ export default function AppRoutes() {
 
   useEffect(() => {
     if (periods?.length && !selectedPeriodId) {
-      const now = new Date().toISOString().split('T')[0]
-      const upcoming = periods.find((p) => p.week_start >= now) ?? periods[0]
-      if (upcoming) setSelectedPeriodId(upcoming.id)
+      const currentWeekStart = formatWeekStartKey(new Date())
+      // Default to the current week if it exists, otherwise the first available upcoming week
+      const defaultPeriod = periods.find((p) => p.week_start === currentWeekStart) 
+        ?? periods.find((p) => p.week_start > currentWeekStart) 
+        ?? periods[0]
+        
+      if (defaultPeriod) setSelectedPeriodId(defaultPeriod.id)
     }
   }, [periods, selectedPeriodId])
 
