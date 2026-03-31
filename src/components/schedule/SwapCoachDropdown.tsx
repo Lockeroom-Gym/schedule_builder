@@ -33,6 +33,10 @@ export function SwapCoachDropdown({
     coach: StaffMember
     conflicts: SessionWithCoaches[]
   } | null>(null)
+  const [pendingOngoingSwap, setPendingOngoingSwap] = useState<{
+    coach: StaffMember
+  } | null>(null)
+  const [ongoingOption, setOngoingOption] = useState<'none' | 4 | 8 | 'all'>('none')
   
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -186,11 +190,22 @@ export function SwapCoachDropdown({
       .slice(0, 10) // Always aim to provide ideally 10 options
   }, [staff, alreadyAssignedIds, leaveOnDate, search, preferences, sessionBlockId, session, allSessions])
 
-  const doSwap = async (coach: StaffMember) => {
+  const doSwap = async (coach: StaffMember, isOngoing: boolean, weeks?: number) => {
     await swapCoach.mutateAsync({
       assignmentId: assignment.id,
       newCoachId: coach.id,
       weekStart,
+      isOngoing,
+      numWeeks: weeks,
+      originalCoachId: assignment.coach_id,
+      sessionDetails: {
+        gym: session.gym,
+        day_name: session.day_name,
+        session_time: session.session_time,
+        session_type_id: session.session_type_id,
+        flow_label: session.flow_label,
+        session_date: session.session_date,
+      }
     })
     onClose()
   }
@@ -199,7 +214,7 @@ export function SwapCoachDropdown({
     if (option.conflicts.length > 0) {
       setPendingSwap({ coach: option.coach, conflicts: option.conflicts })
     } else {
-      void doSwap(option.coach)
+      setPendingOngoingSwap({ coach: option.coach })
     }
   }
 
@@ -347,12 +362,95 @@ export function SwapCoachDropdown({
                 onClick={() => {
                   const coach = pendingSwap.coach
                   setPendingSwap(null)
-                  void doSwap(coach)
+                  setPendingOngoingSwap({ coach })
                 }}
-                disabled={swapCoach.isPending}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
               >
                 Swap anyway
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Ongoing Change Modal */}
+      {pendingOngoingSwap && (
+        <Modal
+          isOpen
+          onClose={() => setPendingOngoingSwap(null)}
+          title="Ongoing Change"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              You are substituting <span className="font-semibold">{assignment.coach.coach_name}</span> with <span className="font-semibold">{pendingOngoingSwap.coach.coach_name}</span>.
+            </p>
+            <p className="text-sm text-gray-700 font-medium">
+              Should this change apply to future weeks for this specific session?
+            </p>
+            
+            <div className="space-y-2 mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
+                <input
+                  type="radio"
+                  name="ongoingOption"
+                  checked={ongoingOption === 'none'}
+                  onChange={() => setOngoingOption('none')}
+                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                Just this session
+              </label>
+              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
+                <input
+                  type="radio"
+                  name="ongoingOption"
+                  checked={ongoingOption === 4}
+                  onChange={() => setOngoingOption(4)}
+                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                Next 4 weeks
+              </label>
+              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
+                <input
+                  type="radio"
+                  name="ongoingOption"
+                  checked={ongoingOption === 8}
+                  onChange={() => setOngoingOption(8)}
+                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                Next 8 weeks
+              </label>
+              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
+                <input
+                  type="radio"
+                  name="ongoingOption"
+                  checked={ongoingOption === 'all'}
+                  onChange={() => setOngoingOption('all')}
+                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                All scheduled future weeks
+              </label>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-3">
+              <button
+                onClick={() => setPendingOngoingSwap(null)}
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const coach = pendingOngoingSwap.coach
+                  const isOngoing = ongoingOption !== 'none'
+                  const numWeeks = ongoingOption === 'all' || ongoingOption === 'none' ? undefined : ongoingOption as number
+                  setPendingOngoingSwap(null)
+                  void doSwap(coach, isOngoing, numWeeks)
+                }}
+                disabled={swapCoach.isPending}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                Confirm Swap
               </button>
             </div>
           </div>
