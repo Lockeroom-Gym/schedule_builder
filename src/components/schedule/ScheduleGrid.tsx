@@ -130,7 +130,22 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
   // Sessions indexed by "dayName::sessionTime"
   const sessionMap = useMemo(() => {
     const map: Record<string, SessionWithCoaches[]> = {}
-    for (const s of coachFilteredSessions) {
+    
+    // Sort by Gym order: BRIDGE, BLIGH, COLLINS
+    const GYM_ORDER: Record<string, number> = {
+      BRIDGE: 1,
+      BLIGH: 2,
+      COLLINS: 3,
+    }
+    
+    // Create a sorted copy of the sessions
+    const sortedSessions = [...coachFilteredSessions].sort((a, b) => {
+      const orderA = GYM_ORDER[a.gym] || 99
+      const orderB = GYM_ORDER[b.gym] || 99
+      return orderA - orderB
+    })
+
+    for (const s of sortedSessions) {
       const key = `${s.day_name}::${s.session_time}`
       if (!map[key]) map[key] = []
       map[key].push(s)
