@@ -12,9 +12,10 @@ interface SessionRowProps {
   staff: StaffMember[]
   leaveData: StaffLeave[]
   isLocked: boolean
+  allSessions: SessionWithCoaches[]
 }
 
-export function SessionRow({ session, weekStart, staff, leaveData, isLocked }: SessionRowProps) {
+export function SessionRow({ session, weekStart, staff, leaveData, isLocked, allSessions }: SessionRowProps) {
   const [assigningSlot, setAssigningSlot] = useState<number | null>(null)
   const deleteSession = useDeleteSession()
 
@@ -102,6 +103,8 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked }: S
                 staff={staff}
                 leaveData={leaveData}
                 onClose={() => setAssigningSlot(null)}
+                currentSession={session}
+                allSessions={allSessions}
               />
             )}
           </div>

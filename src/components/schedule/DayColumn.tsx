@@ -125,6 +125,7 @@ export function DayColumn({
               staff={staff}
               leaveData={leaveData}
               isLocked={isLocked}
+              allSessions={sessions}
             />
           ))}
 
