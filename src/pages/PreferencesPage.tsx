@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { usePreferences, useCoachCompliance } from '../hooks/usePreferences'
+import { usePreferences, useAllEffectivePreferences, useCoachCompliance } from '../hooks/usePreferences'
 import { useStaff } from '../hooks/useStaff'
 import { useSchedulePeriods } from '../hooks/useSchedulePeriods'
 import { PreferenceHeatMap } from '../components/preferences/PreferenceHeatMap'
@@ -25,13 +25,15 @@ export function PreferencesPage({ selectedPeriodId }: PreferencesPageProps) {
   const selectedPeriod = periods?.find((p) => p.id === selectedPeriodId)
   const isLocked = selectedPeriod ? getPeriodPhase(selectedPeriod.week_start) !== 'draft' : false
 
+  const { data: effectivePreferences, isLoading: effectivePrefsLoading } = useAllEffectivePreferences(selectedPeriod?.week_start || null)
+
   const staffMap = useMemo(() => {
     const m: Record<string, { name: string | null; colour: string | null }> = {}
     for (const s of staff) m[s.id] = { name: s.coach_name, colour: s.rgb_colour }
     return m
   }, [staff])
 
-  if (prefsLoading || complianceLoading) return <PageLoader />
+  if (prefsLoading || complianceLoading || effectivePrefsLoading) return <PageLoader />
 
   return (
     <div className="h-[calc(100vh-56px)] overflow-y-auto bg-gray-50/30">
@@ -64,7 +66,7 @@ export function PreferencesPage({ selectedPeriodId }: PreferencesPageProps) {
               description="Select a period from the dropdown in the header to view preferences."
             />
           ) : (
-            <PreferenceHeatMap preferences={preferences ?? []} staff={staff} />
+            <PreferenceHeatMap preferences={effectivePreferences ?? []} staff={staff} />
           )}
         </div>
 
