@@ -84,12 +84,40 @@ export function SwapCoachDropdown({
     return null
   }, [session, blockConfigs])
 
+  // Helper to convert HH:MM:SS to minutes for time comparisons
+  const timeToMinutes = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number)
+    return h * 60 + m
+  }
+
   // Get options
   const swapOptions = useMemo(() => {
+    const targetTimeMin = timeToMinutes(session.session_time)
+
+    // Find all coaches working within 39 minutes of this session on the same day
+    const unavailableCoachIds = new Set<string>()
+    for (const s of allSessions) {
+      if (s.day_name === session.day_name) {
+        const sTimeMin = timeToMinutes(s.session_time)
+        if (Math.abs(sTimeMin - targetTimeMin) <= 39) {
+          for (const c of s.coaches) {
+            unavailableCoachIds.add(c.coach_id)
+          }
+        }
+      }
+    }
+
     const availableStaff = staff
       .filter((s) => s.staff_status === 'active')
       .filter((s) => !alreadyAssignedIds.has(s.id))
       .filter((s) => !leaveOnDate.has(s.id))
+      .filter((s) => !unavailableCoachIds.has(s.id)) // Exclude if already coaching within 39m
+      .filter((s) => {
+        // State-based location restrictions
+        if (session.gym === 'COLLINS') return s.state === 'VIC'
+        if (session.gym === 'BRIDGE' || session.gym === 'BLIGH') return s.state === 'NSW'
+        return true
+      })
       .filter((s) =>
         search.trim() === '' ||
         (s.coach_name ?? '').toLowerCase().includes(search.toLowerCase())
@@ -124,7 +152,7 @@ export function SwapCoachDropdown({
 
     return scoredStaff
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5) // Always aim to provide ideally 5 options
+      .slice(0, 10) // Always aim to provide ideally 10 options
   }, [staff, alreadyAssignedIds, leaveOnDate, search, preferences, sessionBlockId, session, allSessions])
 
   const doSwap = async (coach: StaffMember) => {
@@ -181,23 +209,23 @@ export function SwapCoachDropdown({
                 key={coach.id}
                 onClick={() => handleSwap(opt)}
                 disabled={swapCoach.isPending}
-                className="flex flex-col w-full px-3 py-2 hover:bg-gray-50 border-b last:border-0 border-gray-50 transition-colors text-left"
+                className="flex flex-col w-full px-2 py-1.5 hover:bg-gray-50 border-b last:border-0 border-gray-50 transition-colors text-left"
               >
-                <div className="flex items-center gap-2.5 w-full">
+                <div className="flex items-center gap-2 w-full">
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: colour }}
                   >
                     <span className="text-[9px] text-white font-bold">{getInitials(coach.coach_name)}</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-800 truncate">{coach.coach_name}</p>
+                    <p className="text-[11px] font-medium text-gray-800 truncate leading-tight">{coach.coach_name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${prefColor}`}>
+                      <span className={`text-[8px] px-1 py-0.5 rounded font-medium leading-none ${prefColor}`}>
                         {prefLabel}
                       </span>
                       {conflicts.length > 0 && (
-                        <span className="text-[9px] text-amber-600 font-medium">Cross-flow</span>
+                        <span className="text-[8px] text-amber-600 font-medium leading-none">Cross-flow</span>
                       )}
                     </div>
                   </div>
