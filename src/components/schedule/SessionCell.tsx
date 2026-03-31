@@ -65,33 +65,17 @@ export function SessionCell({
   const startEditingTime = (e: React.MouseEvent) => {
     if (isLocked) return
     e.stopPropagation()
-    // Always use 24-hour format HH:MM
+    // session_time is "HH:MM:SS", input type=time needs "HH:MM"
     const parts = session.session_time.split(':')
     setDraftTime(`${parts[0]}:${parts[1]}`)
     setEditingTime(true)
-    setTimeout(() => {
-      if (timeInputRef.current) {
-        timeInputRef.current.focus()
-        timeInputRef.current.setSelectionRange(0, 2)
-      }
-    }, 0)
   }
 
   const saveTime = () => {
     if (!draftTime) { setEditingTime(false); return }
-    let val = draftTime.replace(/[^0-9]/g, '')
-    if (val.length < 4) val = val.padEnd(4, '0')
-    let h = parseInt(val.slice(0, 2), 10)
-    let m = parseInt(val.slice(2, 4), 10)
-    if (isNaN(h)) h = 0
-    if (isNaN(m)) m = 0
-    if (h > 23) h = 23
-    if (m > 59) m = 59
-    
-    const formatted = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`
-    if (formatted === session.session_time) { setEditingTime(false); return }
-    
-    updateTime.mutate({ sessionId: session.id, sessionTime: formatted, weekStart }, {
+    const timeValue = draftTime.length === 5 ? `${draftTime}:00` : draftTime
+    if (timeValue === session.session_time) { setEditingTime(false); return }
+    updateTime.mutate({ sessionId: session.id, sessionTime: timeValue, weekStart }, {
       onSettled: () => setEditingTime(false),
     })
   }
@@ -100,58 +84,10 @@ export function SessionCell({
     if (e.key === 'Enter') {
       e.preventDefault()
       saveTime()
-      return
-    }
-    if (e.key === 'Escape') {
+    } else if (e.key === 'Escape') {
       e.preventDefault()
       setEditingTime(false)
-      return
     }
-
-    const target = e.currentTarget
-    const start = target.selectionStart || 0
-
-    if (e.key === 'Tab') {
-      if (start <= 2 && !e.shiftKey) {
-        e.preventDefault()
-        target.setSelectionRange(3, 5)
-      }
-      return
-    }
-
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault()
-      const isHours = start <= 2
-
-      let val = draftTime.replace(/[^0-9]/g, '')
-      let h = parseInt(val.slice(0, 2) || '0', 10)
-      let m = parseInt(val.slice(2, 4) || '0', 10)
-
-      if (isHours) {
-        h = e.key === 'ArrowUp' ? (h + 1) % 24 : (h - 1 + 24) % 24
-      } else {
-        // Adjust minutes by 5
-        m = e.key === 'ArrowUp' ? (m + 5) % 60 : (m - 5 + 60) % 60
-      }
-
-      const newTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-      setDraftTime(newTime)
-      setTimeout(() => {
-        if (timeInputRef.current) {
-          const pos = isHours ? 0 : 3
-          timeInputRef.current.setSelectionRange(pos, pos + 2)
-        }
-      }, 0)
-    }
-  }
-
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^0-9]/g, '')
-    if (val.length > 4) val = val.slice(0, 4)
-    if (val.length >= 3) {
-      val = val.slice(0, 2) + ':' + val.slice(2)
-    }
-    setDraftTime(val)
   }
 
   useEffect(() => {
@@ -245,24 +181,14 @@ export function SessionCell({
         {editingTime ? (
           <input
             ref={timeInputRef}
-            type="text"
-            placeholder="HH:MM"
+            type="time"
             value={draftTime}
-            onChange={handleTimeChange}
+            onChange={(e) => setDraftTime(e.target.value)}
             onKeyDown={handleTimeKeyDown}
             onBlur={saveTime}
-            onClick={(e) => {
-              e.stopPropagation()
-              // auto-select hours or minutes based on click position
-              const target = e.currentTarget
-              setTimeout(() => {
-                const start = target.selectionStart || 0
-                if (start <= 2) target.setSelectionRange(0, 2)
-                else target.setSelectionRange(3, 5)
-              }, 0)
-            }}
+            onClick={(e) => e.stopPropagation()}
             disabled={updateTime.isPending}
-            className="text-[10px] font-bold text-gray-800 bg-white border border-blue-400 rounded px-1 py-0.5 w-[38px] text-center leading-none flex-shrink-0 outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            className="text-[10px] font-bold text-gray-800 bg-white border border-blue-400 rounded px-1 py-0.5 w-[90px] leading-none flex-shrink-0 outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
           />
         ) : (
           <button
