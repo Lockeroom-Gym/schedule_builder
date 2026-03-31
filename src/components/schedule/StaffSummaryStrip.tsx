@@ -39,7 +39,19 @@ export function StaffSummaryStrip({
     const fullTimers: typeof counts = []
     const casuals: typeof counts = []
     
+    const EXCLUDED_ROLES = [
+      'Marketing Manager',
+      'Cleaning',
+      'Physiotherapist',
+      'Maintenance',
+      'Admin',
+      'CRO',
+      'CEO',
+    ]
+    
     for (const c of counts) {
+      if (EXCLUDED_ROLES.includes(c.role ?? '')) continue
+
       if (c.role === 'Casual Coach') {
         casuals.push(c)
       } else {
