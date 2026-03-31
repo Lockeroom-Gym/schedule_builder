@@ -562,7 +562,6 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
           isOpen={showCopyModal}
           onClose={() => setShowCopyModal(false)}
           sourceWeekStart={weekStart}
-          sourcePeriodId={selectedPeriodId}
           periods={periods}
         />
       )}
