@@ -100,11 +100,11 @@ export function SessionCell({
         {/* Flow level badge — only shown for staggered (non-A-flow) sessions */}
         {flowLevel > 0 && (
           <span
-            className="text-[8px] font-bold px-1 py-0.5 rounded leading-none flex-shrink-0"
-            style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
+            style={{ backgroundColor: '#ede9fe', color: '#7c3aed' }}
             title={`${FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}-flow (staggered session)`}
           >
-            {FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}
+            {FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}-flow
           </span>
         )}
 

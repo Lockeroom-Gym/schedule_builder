@@ -358,7 +358,7 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
                         return (
                           <div
                             key={session.id}
-                            style={{ marginLeft: flowLevel * 12 }}
+                            style={{ marginLeft: flowLevel * 20 }}
                           >
                             <SessionCell
                               session={session}
