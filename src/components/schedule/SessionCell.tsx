@@ -3,8 +3,9 @@ import type { SessionWithCoaches } from '../../types/schedule'
 import type { StaffMember, StaffLeave } from '../../types/database'
 import { CoachSlotFilled } from './CoachSlot'
 import { CoachAssignDropdown } from './CoachAssignDropdown'
-import { useDeleteSession, useUpdateSessionFlow } from '../../hooks/useMutateSession'
+import { useDeleteSession, useUpdateSessionFlow, useUpdateSessionTime } from '../../hooks/useMutateSession'
 import { GYM_COLORS } from '../../lib/constants'
+import { formatTime } from '../../lib/dateUtils'
 
 const FLOW_OPTIONS = ['A', 'B', 'C', 'D']
 
@@ -40,9 +41,13 @@ export function SessionCell({
 }: SessionCellProps) {
   const [assigningSlot, setAssigningSlot] = useState<number | null>(null)
   const [flowMenuOpen, setFlowMenuOpen] = useState(false)
+  const [editingTime, setEditingTime] = useState(false)
+  const [draftTime, setDraftTime] = useState('')
   const flowMenuRef = useRef<HTMLDivElement>(null)
+  const timeInputRef = useRef<HTMLInputElement>(null)
   const deleteSession = useDeleteSession()
   const updateFlow = useUpdateSessionFlow()
+  const updateTime = useUpdateSessionTime()
 
   const flowLabel = session.flow_label ?? 'A'
 
@@ -56,6 +61,41 @@ export function SessionCell({
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [flowMenuOpen])
+
+  const startEditingTime = (e: React.MouseEvent) => {
+    if (isLocked) return
+    e.stopPropagation()
+    // session_time is "HH:MM:SS", input type=time needs "HH:MM"
+    const parts = session.session_time.split(':')
+    setDraftTime(`${parts[0]}:${parts[1]}`)
+    setEditingTime(true)
+  }
+
+  const saveTime = () => {
+    if (!draftTime) { setEditingTime(false); return }
+    const timeValue = draftTime.length === 5 ? `${draftTime}:00` : draftTime
+    if (timeValue === session.session_time) { setEditingTime(false); return }
+    updateTime.mutate({ sessionId: session.id, sessionTime: timeValue, weekStart }, {
+      onSettled: () => setEditingTime(false),
+    })
+  }
+
+  const handleTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveTime()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setEditingTime(false)
+    }
+  }
+
+  useEffect(() => {
+    if (editingTime && timeInputRef.current) {
+      timeInputRef.current.focus()
+      timeInputRef.current.select()
+    }
+  }, [editingTime])
 
   const handleFlowChange = (label: string) => {
     setFlowMenuOpen(false)
@@ -80,7 +120,7 @@ export function SessionCell({
 
   const flowColor = FLOW_COLORS[flowLabel] || FLOW_COLORS['A']
 
-  const isAnyMenuOpen = flowMenuOpen || assigningSlot !== null
+  const isAnyMenuOpen = flowMenuOpen || assigningSlot !== null || editingTime
 
   return (
     <div
@@ -136,6 +176,30 @@ export function SessionCell({
           onClick={(e) => e.stopPropagation()}
           className="w-3 h-3 rounded border-gray-300 cursor-pointer flex-shrink-0 accent-blue-600"
         />
+
+        {/* Session time – click to edit inline */}
+        {editingTime ? (
+          <input
+            ref={timeInputRef}
+            type="time"
+            value={draftTime}
+            onChange={(e) => setDraftTime(e.target.value)}
+            onKeyDown={handleTimeKeyDown}
+            onBlur={saveTime}
+            onClick={(e) => e.stopPropagation()}
+            disabled={updateTime.isPending}
+            className="text-[9px] font-bold text-gray-800 bg-white border border-blue-400 rounded px-0.5 w-[58px] leading-none flex-shrink-0 outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+          />
+        ) : (
+          <button
+            onClick={startEditingTime}
+            disabled={isLocked}
+            className="text-[9px] font-bold text-gray-600 leading-none flex-shrink-0 hover:text-blue-600 hover:underline transition-colors disabled:pointer-events-none"
+            title={isLocked ? undefined : 'Click to edit time'}
+          >
+            {formatTime(session.session_time)}
+          </button>
+        )}
 
         {/* Session type badge */}
         <span

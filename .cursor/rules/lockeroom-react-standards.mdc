@@ -1,0 +1,48 @@
+---
+description: Company-wide standards for React, TypeScript, and Supabase development at Lockeroom.
+globs: ["src/**/*.tsx", "src/**/*.ts"]
+---
+# Lockeroom React & TypeScript Standards
+
+These rules define the company-wide standard for building React frontend applications at Lockeroom. Always adhere to these principles when writing or modifying code.
+
+## 1. Tech Stack Requirements
+- **Framework:** React 18+ (via Vite). No Next.js unless explicitly requested.
+- **Language:** TypeScript with strict mode enabled. Do not use `any` unless absolutely necessary.
+- **Styling:** Tailwind CSS v3+.
+- **Data Fetching:** `@tanstack/react-query` v5.
+- **Backend:** Supabase JS Client v2.
+
+## 2. Component Architecture
+- Place domain-specific components in `src/components/<domain>/` (e.g., `schedule/`, `coaches/`).
+- Place highly reusable, generic UI components in `src/components/ui/` (e.g., `Badge.tsx`, `Modal.tsx`).
+- Components should be functional and use React hooks.
+- **Never** put data fetching logic (`useEffect` with `fetch` or `supabase.from()`) directly inside a component.
+
+## 3. Data Fetching & Mutations
+- All database interactions must be extracted into custom hooks inside the `src/hooks/` directory.
+- Use `@tanstack/react-query` for all async state management.
+  - Use `useQuery` for reads.
+  - Use `useMutation` for writes (inserts, updates, deletes).
+- After a successful mutation, use `queryClient.invalidateQueries({ queryKey: [...] })` to automatically refresh the UI. Do not manually update React state to mirror the database if a refetch is sufficient.
+
+## 4. Supabase Guidelines
+- The Supabase client is initialized once in `src/lib/supabase.ts`. Import this instance, do not create new ones.
+- **Never** hardcode environment variables. Use `import.meta.env.VITE_SUPABASE_URL`.
+- Maintain a 1:1 mapping of database tables/views to TypeScript interfaces in `src/types/database.ts`. Ensure all Supabase hooks type their returns against these interfaces.
+
+## 5. Styling with Tailwind
+- Avoid creating custom CSS classes in `.css` files. Use Tailwind utility classes for all styling.
+- For dynamic styles (like database-driven hex codes for gym colors or coach avatars), it is acceptable to use the `style={{}}` prop, but use Tailwind classes for layout, padding, typography, etc.
+- When concatenating class names conditionally, use standard template literals (e.g., `` className={`px-4 ${isActive ? 'bg-blue-500' : 'bg-gray-200'}`} ``).
+
+## 6. Logic & Utilities
+- Extract pure functions (date math, formatting, data sorting) into the `src/lib/` folder.
+- Keep components focused on rendering UI. If a component has complex data transformation logic (like reducing an array or parsing strings), move that logic to a pure function in `lib/` and write a test for it.
+- **Date Management:** Always use `date-fns` for date manipulation. Avoid native `Date` object math where possible.
+
+## 7. Context & Global State
+- Avoid global state libraries like Redux or Zustand.
+- Server state belongs in `react-query`.
+- UI state (modals, dropdowns, simple filters) belongs in local `useState`.
+- Complex, deeply nested UI state can use React `Context`, but only as a last resort. Lift state up to the nearest common ancestor first.

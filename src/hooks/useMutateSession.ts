@@ -64,6 +64,30 @@ export function useDeleteSession() {
   })
 }
 
+export function useUpdateSessionTime() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      sessionTime,
+    }: {
+      sessionId: string
+      sessionTime: string
+      weekStart: string
+    }) => {
+      const { error } = await supabase
+        .from('schedule_sessions')
+        .update({ session_time: sessionTime })
+        .eq('id', sessionId)
+      if (error) throw error
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-sessions', variables.weekStart] })
+    },
+  })
+}
+
 export function useUpdateSessionFlow() {
   const queryClient = useQueryClient()
 

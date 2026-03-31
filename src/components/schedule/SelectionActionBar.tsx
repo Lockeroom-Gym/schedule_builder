@@ -3,6 +3,9 @@ import type { SessionWithCoaches } from '../../types/schedule'
 import type { StaffMember } from '../../types/database'
 import { getInitials } from '../../lib/scheduleUtils'
 import { useBulkCoachOperations } from '../../hooks/useBulkCoachOperations'
+import { Modal } from '../ui/Modal'
+import { GYM_COLORS } from '../../lib/constants'
+import { formatTime } from '../../lib/dateUtils'
 
 type PickerMode = 'assign' | 'remove' | 'substitute-from' | 'substitute-to'
 
@@ -24,6 +27,10 @@ export function SelectionActionBar({
   const [pickerMode, setPickerMode] = useState<PickerMode | null>(null)
   const [substituteFromId, setSubstituteFromId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [pendingSubstitute, setPendingSubstitute] = useState<{
+    newCoachId: string
+    conflicts: SessionWithCoaches[]
+  } | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const { bulkAssign, bulkRemove, bulkSubstitute, isPending } = useBulkCoachOperations()
 
@@ -101,7 +108,7 @@ export function SelectionActionBar({
     setSearch('')
   }
 
-  const handleSubstituteTo = async (newCoachId: string) => {
+  const doSubstitute = async (newCoachId: string) => {
     if (!substituteFromId) return
     const assignmentIds = selectedSessions.flatMap((s) =>
       s.coaches.filter((c) => c.coach_id === substituteFromId).map((c) => c.id)
@@ -113,6 +120,18 @@ export function SelectionActionBar({
     await bulkSubstitute({ assignmentIds, inserts, newCoachId, weekStart })
     closePicker()
     onClearSelection()
+  }
+
+  const handleSubstituteTo = (newCoachId: string) => {
+    if (!substituteFromId) return
+    const conflicts = selectedSessions.filter((s) =>
+      s.coaches.some((c) => c.coach_id === newCoachId)
+    )
+    if (conflicts.length > 0) {
+      setPendingSubstitute({ newCoachId, conflicts })
+    } else {
+      void doSubstitute(newCoachId)
+    }
   }
 
   const currentPickerList = (): StaffMember[] => {
@@ -140,7 +159,82 @@ export function SelectionActionBar({
 
   const substituteFromCoach = staff.find((s) => s.id === substituteFromId)
 
+  const substituteToCoach = pendingSubstitute
+    ? staff.find((s) => s.id === pendingSubstitute.newCoachId)
+    : null
+  const substituteFromCoach = substituteFromId ? staff.find((s) => s.id === substituteFromId) : null
+
   return (
+    <>
+    {/* Substitution conflict confirmation modal */}
+    {pendingSubstitute && substituteToCoach && substituteFromCoach && (
+      <Modal
+        isOpen
+        onClose={() => setPendingSubstitute(null)}
+        title="Substitution conflict"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: substituteToCoach.rgb_colour ?? '#6366f1' }}
+            >
+              <span className="text-[9px] text-white font-bold">{getInitials(substituteToCoach.coach_name)}</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">{substituteToCoach.coach_name}</p>
+              <p className="text-xs text-gray-500">{substituteToCoach.role}</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">{substituteToCoach.coach_name}</span> is already
+            assigned to {pendingSubstitute.conflicts.length} of the selected sessions.
+            In those sessions, swapping <span className="font-semibold">{substituteFromCoach.coach_name}</span> will
+            effectively just remove them, since the replacement is already there.
+          </p>
+
+          <div className="space-y-1.5">
+            {pendingSubstitute.conflicts.map((s) => {
+              const gymConfig = GYM_COLORS[s.gym] ?? { border: '#9ca3af', label: s.gym }
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
+                >
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: gymConfig.border }} />
+                  <span className="font-semibold text-gray-800">{formatTime(s.session_time)}</span>
+                  <span className="text-gray-500">{s.session_type?.label ?? '?'}</span>
+                  <span style={{ color: gymConfig.border }} className="font-medium">{gymConfig.label}</span>
+                  <span className="ml-auto text-amber-600 text-[10px] font-medium">already assigned</span>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex gap-2 justify-end pt-1">
+            <button
+              onClick={() => setPendingSubstitute(null)}
+              className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                const id = pendingSubstitute.newCoachId
+                setPendingSubstitute(null)
+                void doSubstitute(id)
+              }}
+              disabled={isPending}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+            >
+              Proceed anyway
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )}
     <div className="relative flex-shrink-0 z-30">
       {/* Coach picker popover */}
       {pickerMode && (
@@ -251,5 +345,6 @@ export function SelectionActionBar({
         </button>
       </div>
     </div>
+    </>
   )
 }
