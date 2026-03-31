@@ -87,6 +87,7 @@ export function useSwapCoach() {
       if (error) throw error
 
       // 2. If it's ongoing, update future sessions
+      let futureSwappedCount = 0
       if (payload.isOngoing && payload.sessionDetails && payload.originalCoachId) {
         const { gym, day_name, session_time, session_type_id, flow_label, session_date } = payload.sessionDetails
         
@@ -111,17 +112,19 @@ export function useSwapCoach() {
         if (futureSessions && futureSessions.length > 0) {
           const sessionIds = futureSessions.map(s => s.id)
           
-          const { error: updateError } = await supabase
+          const { data: updatedRows, error: updateError } = await supabase
             .from('schedule_session_coaches')
             .update({ coach_id: payload.newCoachId })
             .in('session_id', sessionIds)
             .eq('coach_id', payload.originalCoachId)
+            .select('id')
             
           if (updateError) throw updateError
+          if (updatedRows) futureSwappedCount = updatedRows.length
         }
       }
 
-      return data
+      return { data, futureSwappedCount }
     },
     onSuccess: (_, variables) => {
       if (variables.isOngoing) {

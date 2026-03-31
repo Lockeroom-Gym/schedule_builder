@@ -36,7 +36,11 @@ export function SwapCoachDropdown({
   const [pendingOngoingSwap, setPendingOngoingSwap] = useState<{
     coach: StaffMember
   } | null>(null)
-  const [ongoingOption, setOngoingOption] = useState<'none' | 4 | 8 | 'all'>('none')
+  const [ongoingOption, setOngoingOption] = useState<'none' | 'custom' | 'all'>('none')
+  const [customWeeks, setCustomWeeks] = useState(4)
+  const [swapSummary, setSwapSummary] = useState<{
+    futureSwappedCount: number
+  } | null>(null)
   
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -191,7 +195,7 @@ export function SwapCoachDropdown({
   }, [staff, alreadyAssignedIds, leaveOnDate, search, preferences, sessionBlockId, session, allSessions])
 
   const doSwap = async (coach: StaffMember, isOngoing: boolean, weeks?: number) => {
-    await swapCoach.mutateAsync({
+    const result = await swapCoach.mutateAsync({
       assignmentId: assignment.id,
       newCoachId: coach.id,
       weekStart,
@@ -207,7 +211,12 @@ export function SwapCoachDropdown({
         session_date: session.session_date,
       }
     })
-    onClose()
+    
+    if (isOngoing) {
+      setSwapSummary({ futureSwappedCount: result.futureSwappedCount || 0 })
+    } else {
+      onClose()
+    }
   }
 
   const handleSwap = (option: typeof swapOptions[0]) => {
@@ -400,26 +409,30 @@ export function SwapCoachDropdown({
                 />
                 Just this session
               </label>
-              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
-                <input
-                  type="radio"
-                  name="ongoingOption"
-                  checked={ongoingOption === 4}
-                  onChange={() => setOngoingOption(4)}
-                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                />
-                Next 4 weeks
-              </label>
-              <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
-                <input
-                  type="radio"
-                  name="ongoingOption"
-                  checked={ongoingOption === 8}
-                  onChange={() => setOngoingOption(8)}
-                  className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                />
-                Next 8 weeks
-              </label>
+              
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer flex-shrink-0">
+                  <input
+                    type="radio"
+                    name="ongoingOption"
+                    checked={ongoingOption === 'custom'}
+                    onChange={() => setOngoingOption('custom')}
+                    className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                  />
+                  Set number of weeks
+                </label>
+                {ongoingOption === 'custom' && (
+                  <input
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={customWeeks}
+                    onChange={(e) => setCustomWeeks(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 text-sm px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                )}
+              </div>
+
               <label className="flex items-center gap-3 text-sm text-gray-800 cursor-pointer">
                 <input
                   type="radio"
@@ -432,6 +445,17 @@ export function SwapCoachDropdown({
               </label>
             </div>
 
+            {(ongoingOption === 'custom' || ongoingOption === 'all') && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800 font-medium flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">⚠️</span>
+                  <span>
+                    <strong>Warning:</strong> Ongoing swaps do not check for future conflicts (like double-bookings or the 10-hour rule). Please verify the new coach's schedule for future weeks.
+                  </span>
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2 justify-end pt-3">
               <button
                 onClick={() => setPendingOngoingSwap(null)}
@@ -443,14 +467,54 @@ export function SwapCoachDropdown({
                 onClick={() => {
                   const coach = pendingOngoingSwap.coach
                   const isOngoing = ongoingOption !== 'none'
-                  const numWeeks = ongoingOption === 'all' || ongoingOption === 'none' ? undefined : ongoingOption as number
+                  const numWeeks = ongoingOption === 'custom' ? customWeeks : undefined
                   setPendingOngoingSwap(null)
                   void doSwap(coach, isOngoing, numWeeks)
                 }}
                 disabled={swapCoach.isPending}
                 className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                Confirm Swap
+                {swapCoach.isPending ? 'Swapping...' : 'Confirm Swap'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {/* Summary Modal */}
+      {swapSummary && (
+        <Modal
+          isOpen
+          onClose={() => {
+            setSwapSummary(null)
+            onClose()
+          }}
+          title="Swap Complete"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-green-600 text-2xl">✓</span>
+              </div>
+              <h4 className="text-green-800 font-semibold mb-1">Successfully Swapped</h4>
+              <p className="text-sm text-green-700">
+                This session and <strong>{swapSummary.futureSwappedCount}</strong> future session{swapSummary.futureSwappedCount === 1 ? '' : 's'} were updated.
+              </p>
+            </div>
+            
+            <p className="text-xs text-gray-500 text-center">
+              Note: Only future sessions where the original coach was scheduled were updated.
+            </p>
+
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => {
+                  setSwapSummary(null)
+                  onClose()
+                }}
+                className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Done
               </button>
             </div>
           </div>

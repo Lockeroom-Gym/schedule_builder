@@ -130,11 +130,11 @@ export function SessionCell({
   return (
     <div
       className={`rounded border transition-all group relative pl-6 ${
-        isSelected ? 'ring-2 ring-blue-400 ring-inset shadow-sm' : 'hover:shadow-sm'
+        isSelected ? 'ring-2 ring-blue-500 ring-inset shadow-sm' : 'hover:shadow-sm'
       } ${isAnyMenuOpen ? 'z-50 shadow-md' : 'z-10'}`}
       style={{
-        backgroundColor: isSelected ? '#dbeafe' : cardStyle.bg,
-        borderColor: isSelected ? '#93c5fd' : '#e5e7eb',
+        backgroundColor: isSelected ? '#bfdbfe' : cardStyle.bg,
+        borderColor: isSelected ? '#3b82f6' : '#e5e7eb',
         borderRightWidth: 3,
         borderRightColor: gymConfig.border,
       }}
