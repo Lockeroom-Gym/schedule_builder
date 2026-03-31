@@ -34,9 +34,8 @@ export function PreferenceHeatMap({ preferences, staff }: PreferenceHeatMapProps
   }
 
   // Aggregate data
-  const { cellDataMap, maxCounts } = useMemo(() => {
+  const { cellDataMap } = useMemo(() => {
     const map: Record<string, HeatMapCellData> = {}
-    const max = { preferred: 0, soft: 0, hard: 0 }
     
     // Initialize map with empty data for all blockIds
     for (const block of blocks) {
@@ -68,14 +67,7 @@ export function PreferenceHeatMap({ preferences, staff }: PreferenceHeatMapProps
       })
     }
 
-    // Calculate maxCounts
-    for (const blockData of Object.values(map)) {
-      max.preferred = Math.max(max.preferred, blockData.preferred.length)
-      max.soft = Math.max(max.soft, blockData.soft.length)
-      max.hard = Math.max(max.hard, blockData.hard.length)
-    }
-
-    return { cellDataMap: map, maxCounts: max }
+    return { cellDataMap: map }
   }, [preferences, staff, blocks])
 
   // Get unique block labels (rows) sorted by start time
@@ -114,12 +106,6 @@ export function PreferenceHeatMap({ preferences, staff }: PreferenceHeatMapProps
               </button>
             )
           })}
-        </div>
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-gray-400 font-medium">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Opacity scales with coach count
         </div>
       </div>
 
@@ -162,7 +148,6 @@ export function PreferenceHeatMap({ preferences, staff }: PreferenceHeatMapProps
                       <HeatMapCell 
                         data={data}
                         activeTypes={activeTypes}
-                        maxCounts={maxCounts}
                       />
                     </div>
                   )
