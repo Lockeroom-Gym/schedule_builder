@@ -18,7 +18,6 @@ import {
   formatTime,
   formatDateShort,
 } from '../../lib/dateUtils'
-import { computeFlowLevels } from '../../lib/scheduleUtils'
 import { DAYS_OF_WEEK } from '../../lib/constants'
 import type { SchedulePeriodEffective, DayName } from '../../types/database'
 
@@ -77,9 +76,6 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
     }
     return map
   }, [filteredSessions])
-
-  // Flow level for each session (0=A, 1=B, 2=C, …) computed per gym+day group
-  const flowLevelMap = useMemo(() => computeFlowLevels(filteredSessions), [filteredSessions])
 
   // Leave indexed by date string
   const leaveByDate = useMemo(() => {
@@ -354,11 +350,12 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
                       style={{ minWidth: 150 }}
                     >
                       {cellSessions.map((session) => {
-                        const flowLevel = flowLevelMap.get(session.id) ?? 0
+                        const FLOW_ORDER = ['A', 'B', 'C', 'D', 'E', 'F']
+                        const flowIndex = Math.max(0, FLOW_ORDER.indexOf(session.flow_label ?? 'A'))
                         return (
                           <div
                             key={session.id}
-                            style={{ marginLeft: flowLevel * 20 }}
+                            style={{ marginLeft: flowIndex * 20 }}
                           >
                             <SessionCell
                               session={session}
@@ -369,7 +366,6 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
                               showCoaches={showCoaches}
                               isSelected={selectedSessionIds.has(session.id)}
                               onToggleSelect={() => toggleSession(session.id)}
-                              flowLevel={flowLevel}
                               allSessions={sessions ?? []}
                             />
                           </div>

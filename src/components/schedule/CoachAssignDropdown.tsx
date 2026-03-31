@@ -143,12 +143,12 @@ export function CoachAssignDropdown({
         </div>
       </div>
 
-      {/* Overlap confirmation modal — rendered outside the dropdown so z-index is clean */}
+      {/* Cross-flow confirmation modal */}
       {pendingAssign && (
         <Modal
           isOpen
           onClose={() => setPendingAssign(null)}
-          title="Scheduling conflict"
+          title="Cross-flow assignment"
           size="sm"
         >
           <div className="space-y-4">
@@ -170,7 +170,16 @@ export function CoachAssignDropdown({
             </div>
 
             <p className="text-sm text-gray-700">
-              This coach is already on an overlapping session:
+              This coach is already assigned to a{' '}
+              <span className="font-semibold text-violet-700">
+                {pendingAssign.conflicts[0]?.flow_label ?? 'A'}-flow
+              </span>{' '}
+              session today, but you are scheduling them into a{' '}
+              <span className="font-semibold text-violet-700">
+                {currentSession.flow_label ?? 'A'}-flow
+              </span>{' '}
+              session. Cross-flow assignments mean this coach will be running two different
+              session series on the same day.
             </p>
 
             <ul className="space-y-1.5">
@@ -185,6 +194,12 @@ export function CoachAssignDropdown({
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: gymConfig.border }}
                     />
+                    <span
+                      className="font-bold px-1 py-0.5 rounded text-[9px]"
+                      style={{ backgroundColor: '#ede9fe', color: '#7c3aed' }}
+                    >
+                      {s.flow_label ?? 'A'}-flow
+                    </span>
                     <span className="font-semibold text-gray-800">
                       {formatTime(s.session_time)}
                     </span>
@@ -196,11 +211,6 @@ export function CoachAssignDropdown({
                 )
               })}
             </ul>
-
-            <p className="text-xs text-gray-500">
-              Scheduling this coach into both sessions will create an overlap. Only proceed if
-              you intend this as a cross-session assignment.
-            </p>
 
             <div className="flex gap-2 justify-end pt-1">
               <button

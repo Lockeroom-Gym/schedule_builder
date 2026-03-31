@@ -80,6 +80,7 @@ export interface ScheduleSession {
   gym: GymName
   is_peak: boolean
   status: SessionStatus
+  flow_label: string
   created_by: string | null
   created_at: string
   updated_at: string

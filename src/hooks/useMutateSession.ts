@@ -63,3 +63,27 @@ export function useDeleteSession() {
     },
   })
 }
+
+export function useUpdateSessionFlow() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      flowLabel,
+    }: {
+      sessionId: string
+      flowLabel: string
+      weekStart: string
+    }) => {
+      const { error } = await supabase
+        .from('schedule_sessions')
+        .update({ flow_label: flowLabel })
+        .eq('id', sessionId)
+      if (error) throw error
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-sessions', variables.weekStart] })
+    },
+  })
+}

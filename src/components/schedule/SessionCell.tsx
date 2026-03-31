@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { SessionWithCoaches } from '../../types/schedule'
 import type { StaffMember, StaffLeave } from '../../types/database'
 import { CoachSlotFilled } from './CoachSlot'
 import { CoachAssignDropdown } from './CoachAssignDropdown'
-import { useDeleteSession } from '../../hooks/useMutateSession'
+import { useDeleteSession, useUpdateSessionFlow } from '../../hooks/useMutateSession'
 import { GYM_COLORS } from '../../lib/constants'
 
-const FLOW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
+const FLOW_OPTIONS = ['A', 'B', 'C', 'D']
 
 interface SessionCellProps {
   session: SessionWithCoaches
@@ -17,7 +17,6 @@ interface SessionCellProps {
   showCoaches: boolean
   isSelected: boolean
   onToggleSelect: () => void
-  flowLevel?: number
   allSessions: SessionWithCoaches[]
 }
 
@@ -30,11 +29,33 @@ export function SessionCell({
   showCoaches,
   isSelected,
   onToggleSelect,
-  flowLevel = 0,
   allSessions,
 }: SessionCellProps) {
   const [assigningSlot, setAssigningSlot] = useState<number | null>(null)
+  const [flowMenuOpen, setFlowMenuOpen] = useState(false)
+  const flowMenuRef = useRef<HTMLDivElement>(null)
   const deleteSession = useDeleteSession()
+  const updateFlow = useUpdateSessionFlow()
+
+  const flowLabel = session.flow_label ?? 'A'
+  const isStaggered = flowLabel !== 'A'
+
+  useEffect(() => {
+    if (!flowMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (flowMenuRef.current && !flowMenuRef.current.contains(e.target as Node)) {
+        setFlowMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [flowMenuOpen])
+
+  const handleFlowChange = (label: string) => {
+    setFlowMenuOpen(false)
+    if (label === flowLabel) return
+    updateFlow.mutate({ sessionId: session.id, flowLabel: label, weekStart })
+  }
 
   const gymConfig = GYM_COLORS[session.gym] ?? { border: '#9ca3af', label: session.gym }
   const sessionTypeColor = session.session_type?.color_hex ?? '#6366f1'
@@ -97,14 +118,45 @@ export function SessionCell({
           <span className="font-semibold text-gray-700">{session.total_spots}</span>sp
         </span>
 
-        {/* Flow level badge — only shown for staggered (non-A-flow) sessions */}
-        {flowLevel > 0 && (
+        {/* Flow label — always visible; staggered sessions get violet styling */}
+        {!isLocked && (
+          <div className="relative flex-shrink-0" ref={flowMenuRef}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setFlowMenuOpen((o) => !o) }}
+              disabled={updateFlow.isPending}
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none whitespace-nowrap transition-colors"
+              style={
+                isStaggered
+                  ? { backgroundColor: '#ede9fe', color: '#7c3aed' }
+                  : { backgroundColor: '#f3f4f6', color: '#6b7280' }
+              }
+              title="Change flow"
+            >
+              {flowLabel}-flow
+            </button>
+            {flowMenuOpen && (
+              <div className="absolute z-50 top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden w-24">
+                {FLOW_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={(e) => { e.stopPropagation(); handleFlowChange(opt) }}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-50 ${
+                      opt === flowLabel ? 'text-violet-700 bg-violet-50' : 'text-gray-700'
+                    }`}
+                  >
+                    {opt}-flow
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {isLocked && isStaggered && (
           <span
             className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
             style={{ backgroundColor: '#ede9fe', color: '#7c3aed' }}
-            title={`${FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}-flow (staggered session)`}
           >
-            {FLOW_LABELS[flowLevel] ?? String(flowLevel + 1)}-flow
+            {flowLabel}-flow
           </span>
         )}
 
