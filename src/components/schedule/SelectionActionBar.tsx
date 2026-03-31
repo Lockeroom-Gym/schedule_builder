@@ -162,7 +162,6 @@ export function SelectionActionBar({
   const substituteToCoach = pendingSubstitute
     ? staff.find((s) => s.id === pendingSubstitute.newCoachId)
     : null
-  const substituteFromCoach = substituteFromId ? staff.find((s) => s.id === substituteFromId) : null
 
   return (
     <>
