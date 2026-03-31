@@ -10,6 +10,8 @@ interface StaffSummaryStripProps {
   sessionCoaches: ScheduleSessionCoach[]
   leaveData: StaffLeave[]
   isLoading: boolean
+  selectedCoachId: string | null
+  onCoachSelect: (coachId: string | null) => void
 }
 
 export function StaffSummaryStrip({
@@ -18,6 +20,8 @@ export function StaffSummaryStrip({
   sessionCoaches,
   leaveData,
   isLoading,
+  selectedCoachId,
+  onCoachSelect,
 }: StaffSummaryStripProps) {
   const counts = useMemo(
     () => buildCoachSessionCounts(staff, brackets, sessionCoaches),
@@ -47,6 +51,8 @@ export function StaffSummaryStrip({
             key={c.coachId}
             data={c}
             isOnLeave={coachesOnLeave.has(c.coachId)}
+            isSelected={selectedCoachId === c.coachId}
+            onSelect={() => onCoachSelect(selectedCoachId === c.coachId ? null : c.coachId)}
           />
         ))}
       </div>

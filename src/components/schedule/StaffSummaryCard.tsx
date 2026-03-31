@@ -3,9 +3,11 @@ import type { CoachSessionCount } from '../../types/schedule'
 interface StaffSummaryCardProps {
   data: CoachSessionCount
   isOnLeave: boolean
+  isSelected: boolean
+  onSelect: () => void
 }
 
-export function StaffSummaryCard({ data, isOnLeave }: StaffSummaryCardProps) {
+export function StaffSummaryCard({ data, isOnLeave, isSelected, onSelect }: StaffSummaryCardProps) {
   const colour = data.rgbColour ?? '#6366f1'
   const deltaPositive = data.delta !== null && data.delta >= 0
   const deltaLabel = data.delta !== null
@@ -13,8 +15,13 @@ export function StaffSummaryCard({ data, isOnLeave }: StaffSummaryCardProps) {
     : null
 
   return (
-    <div
-      className="flex-shrink-0 bg-white rounded-xl border border-gray-100 shadow-sm px-3 py-2.5 w-[110px] relative"
+    <button
+      onClick={onSelect}
+      className={`flex-shrink-0 rounded-xl border shadow-sm px-3 py-2.5 w-[110px] relative text-left transition-all ${
+        isSelected
+          ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-300'
+          : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-md'
+      }`}
       style={{ borderTopColor: colour, borderTopWidth: 3 }}
     >
       {isOnLeave && (
@@ -67,6 +74,6 @@ export function StaffSummaryCard({ data, isOnLeave }: StaffSummaryCardProps) {
           <span className="text-[10px] text-red-400 font-medium flex-shrink-0">Leave</span>
         )}
       </div>
-    </div>
+    </button>
   )
 }
