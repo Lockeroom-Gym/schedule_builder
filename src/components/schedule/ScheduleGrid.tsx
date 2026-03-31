@@ -4,7 +4,7 @@ import { useSessionsWithCoaches, useSessionCoaches } from '../../hooks/useSchedu
 import { useStaff, useStaffBrackets } from '../../hooks/useStaff'
 import { useLeave } from '../../hooks/useLeave'
 import { useSessionTypes } from '../../hooks/useSessionTypes'
-import { usePreferences } from '../../hooks/usePreferences'
+import { useEffectiveCoachPreferences } from '../../hooks/usePreferences'
 import { useScheduleBlocks } from '../../hooks/useScheduleBlocks'
 import { StaffSummaryStrip } from './StaffSummaryStrip'
 import { WeekNavigator } from './WeekNavigator'
@@ -59,7 +59,7 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
   const { data: leaveData = [] } = useLeave(weekStart)
   const { data: sessionTypes = [] } = useSessionTypes()
   const { data: sessions = [], isLoading: sessionsLoading } = useSessionsWithCoaches(weekStart)
-  const { data: preferences = [] } = usePreferences(selectedPeriodId)
+  const { data: coachPreferences = [] } = useEffectiveCoachPreferences(selectedCoachId, weekStart)
   const { data: blockConfigs = [] } = useScheduleBlocks()
 
   const isLoading = sessionsLoading || coachesLoading
@@ -75,15 +75,13 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
 
   // Map blockId -> preference type (lowercase) for the selected coach
   const coachBlockPrefs = useMemo(() => {
-    if (!selectedCoachId) return {}
+    if (!selectedCoachId || coachPreferences.length === 0) return {}
     const map: Record<string, string> = {}
-    for (const pref of preferences) {
-      if (pref.staff_id === selectedCoachId) {
-        map[pref.block] = (pref.preference_type as string).toLowerCase()
-      }
+    for (const pref of coachPreferences) {
+      map[pref.block] = (pref.preference_type as string).toLowerCase()
     }
     return map
-  }, [preferences, selectedCoachId])
+  }, [coachPreferences, selectedCoachId])
 
   // Returns the highlight type ('hard' | 'soft' | 'preferred' | null) for a given day+time cell
   const getCellHighlight = useMemo(() => {
@@ -113,26 +111,30 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
     return list
   }, [sessions, selectedGyms, selectedSessionTypes, selectedFlows])
 
-  // All unique session times — derived from gym/type/flow filtered list only,
-  // so the time axis stays consistent when a coach is selected/deselected
-  const allTimes = useMemo(() => {
-    const times = new Set(filteredSessions.map((s) => s.session_time))
-    return Array.from(times).sort()
-  }, [filteredSessions])
+  // Coach-filtered sessions (used for time axis and session map when a coach is selected)
+  const coachFilteredSessions = useMemo(() => {
+    if (!selectedCoachId) return filteredSessions
+    return filteredSessions.filter((s) =>
+      s.coaches.some((c) => c.coach_id === selectedCoachId)
+    )
+  }, [filteredSessions, selectedCoachId])
 
-  // Sessions indexed by "dayName::sessionTime", further filtered by selected coach when active
+  // Time axis collapses to only the selected coach's session times
+  const allTimes = useMemo(() => {
+    const times = new Set(coachFilteredSessions.map((s) => s.session_time))
+    return Array.from(times).sort()
+  }, [coachFilteredSessions])
+
+  // Sessions indexed by "dayName::sessionTime"
   const sessionMap = useMemo(() => {
     const map: Record<string, SessionWithCoaches[]> = {}
-    const source = selectedCoachId
-      ? filteredSessions.filter((s) => s.coaches.some((c) => c.coach_id === selectedCoachId))
-      : filteredSessions
-    for (const s of source) {
+    for (const s of coachFilteredSessions) {
       const key = `${s.day_name}::${s.session_time}`
       if (!map[key]) map[key] = []
       map[key].push(s)
     }
     return map
-  }, [filteredSessions, selectedCoachId])
+  }, [coachFilteredSessions])
 
   // Leave indexed by date string
   const leaveByDate = useMemo(() => {
