@@ -15,6 +15,7 @@ interface CoachSlotFilledProps {
   allSessions?: SessionWithCoaches[]
   staff?: StaffMember[]
   leaveData?: StaffLeave[]
+  onMenuOpenChange?: (isOpen: boolean) => void
 }
 
 export function CoachSlotFilled({
@@ -26,6 +27,7 @@ export function CoachSlotFilled({
   allSessions,
   staff,
   leaveData,
+  onMenuOpenChange,
 }: CoachSlotFilledProps) {
   const [hovered, setHovered] = useState(false)
   const [swapMenuOpen, setSwapMenuOpen] = useState(false)
@@ -39,11 +41,16 @@ export function CoachSlotFilled({
     removeCoach.mutate({ assignmentId: assignment.id, weekStart })
   }
 
+  const toggleSwapMenu = (open: boolean) => {
+    setSwapMenuOpen(open)
+    onMenuOpenChange?.(open)
+  }
+
   if (isOnLeave) {
     return (
       <div className="relative">
         <button
-          onClick={(e) => { e.stopPropagation(); if (!isLocked) setSwapMenuOpen((o) => !o) }}
+          onClick={(e) => { e.stopPropagation(); if (!isLocked) toggleSwapMenu(!swapMenuOpen) }}
           className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border-2 border-red-500 rounded-md hover:bg-red-100 transition-colors shadow-sm relative group"
         >
           <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 animate-pulse">
@@ -68,7 +75,7 @@ export function CoachSlotFilled({
               staff={staff}
               leaveData={leaveData}
               weekStart={weekStart}
-              onClose={() => setSwapMenuOpen(false)}
+              onClose={() => toggleSwapMenu(false)}
            />
         )}
       </div>

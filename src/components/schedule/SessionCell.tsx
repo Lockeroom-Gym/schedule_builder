@@ -43,6 +43,7 @@ export function SessionCell({
   const [flowMenuOpen, setFlowMenuOpen] = useState(false)
   const [editingTime, setEditingTime] = useState(false)
   const [draftTime, setDraftTime] = useState('')
+  const [swapMenuOpenCoachId, setSwapMenuOpenCoachId] = useState<string | null>(null)
   const flowMenuRef = useRef<HTMLDivElement>(null)
   const timeInputRef = useRef<HTMLInputElement>(null)
   const deleteSession = useDeleteSession()
@@ -120,7 +121,7 @@ export function SessionCell({
 
   const flowColor = FLOW_COLORS[flowLabel] || FLOW_COLORS['A']
 
-  const isAnyMenuOpen = flowMenuOpen || assigningSlot !== null || editingTime
+  const isAnyMenuOpen = flowMenuOpen || assigningSlot !== null || editingTime || swapMenuOpenCoachId !== null
 
   return (
     <div
@@ -258,13 +259,13 @@ export function SessionCell({
               key={sc.id}
               assignment={sc as any}
               isOnLeave={!!leaveMap[sc.coach_id]}
-              leaveType={leaveMap[sc.coach_id]}
               weekStart={weekStart}
               isLocked={isLocked}
               session={session}
               allSessions={allSessions}
               staff={staff}
               leaveData={leaveData}
+              onMenuOpenChange={(isOpen) => setSwapMenuOpenCoachId(isOpen ? sc.coach_id : null)}
             />
           ))}
           {!isLocked && (

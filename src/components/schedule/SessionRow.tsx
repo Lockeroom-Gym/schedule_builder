@@ -17,6 +17,7 @@ interface SessionRowProps {
 
 export function SessionRow({ session, weekStart, staff, leaveData, isLocked, allSessions }: SessionRowProps) {
   const [assigningSlot, setAssigningSlot] = useState<number | null>(null)
+  const [swapMenuOpenCoachId, setSwapMenuOpenCoachId] = useState<string | null>(null)
   const deleteSession = useDeleteSession()
 
   const handleDeleteSession = () => {
@@ -31,12 +32,13 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked, all
 
   const sessionTypeColor = session.session_type?.color_hex ?? '#6366f1'
   const isDraft = session.status === 'proposed'
+  const isAnyMenuOpen = assigningSlot !== null || swapMenuOpenCoachId !== null
 
   return (
     <div
-      className={`flex items-start gap-2 px-3 py-2 border-b border-gray-50 hover:bg-gray-50/50 group transition-colors ${
+      className={`flex items-start gap-2 px-3 py-2 border-b border-gray-50 hover:bg-gray-50/50 group transition-colors relative ${
         isDraft ? 'border-l-2 border-l-dashed' : 'border-l-2'
-      }`}
+      } ${isAnyMenuOpen ? 'z-50' : 'z-10'}`}
       style={{ borderLeftColor: sessionTypeColor }}
     >
       {/* Time */}
@@ -87,6 +89,7 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked, all
             allSessions={allSessions}
             staff={staff}
             leaveData={leaveData}
+            onMenuOpenChange={(isOpen) => setSwapMenuOpenCoachId(isOpen ? sc.coach_id : null)}
           />
         ))}
 
