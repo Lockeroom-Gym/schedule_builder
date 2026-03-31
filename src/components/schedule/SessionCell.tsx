@@ -254,7 +254,13 @@ export function SessionCell({
       {/* Coaches line */}
       {showCoaches && (
         <div className="flex items-center gap-1 px-1.5 pb-1.5 flex-wrap relative">
-          {session.coaches.map((sc) => (
+          {[...session.coaches].sort((a, b) => {
+            const aLeave = !!leaveMap[a.coach_id]
+            const bLeave = !!leaveMap[b.coach_id]
+            if (aLeave && !bLeave) return -1
+            if (!aLeave && bLeave) return 1
+            return a.slot_order - b.slot_order
+          }).map((sc) => (
             <CoachSlotFilled
               key={sc.id}
               assignment={sc as any}

@@ -84,11 +84,11 @@ export function CoachSlotFilled({
 
   return (
     <div
-      className="flex items-center gap-1.5 px-2 py-1 rounded-md cursor-default relative group"
+      className="flex items-center gap-1.5 px-2 py-1 rounded-md cursor-default relative group shadow-sm"
       style={{
-        backgroundColor: hexToRgba(colour, 0.12),
+        backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: hexToRgba(colour, 0.3),
+        borderColor: hexToRgba(colour, 0.4),
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
