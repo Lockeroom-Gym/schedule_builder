@@ -12,6 +12,7 @@ import { FilterBar } from './FilterBar'
 import { SessionCell } from './SessionCell'
 import { SelectionActionBar } from './SelectionActionBar'
 import { AddSessionModal } from './AddSessionModal'
+import { CopyScheduleModal } from './CopyScheduleModal'
 import { PageLoader } from '../ui/LoadingSpinner'
 import { EmptyState } from '../ui/EmptyState'
 import {
@@ -47,6 +48,7 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
   const [showCoaches, setShowCoaches] = useState(true)
   const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set())
   const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null)
+  const [showCopyModal, setShowCopyModal] = useState(false)
 
   const selectedPeriod = periods.find((p) => p.id === selectedPeriodId)
   const weekStart = selectedPeriod?.week_start ?? null
@@ -225,6 +227,16 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
               />
             </svg>
             {showCoaches ? 'Hide Coaches' : 'Show Coaches'}
+          </button>
+
+          <button
+            onClick={() => setShowCopyModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy Schedule
           </button>
 
           {!isLocked && (
@@ -543,6 +555,17 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
         sessionTypes={sessionTypes}
         defaultDay={addSessionDay ?? 'MON'}
       />
+
+      {/* ── Copy schedule modal ── */}
+      {weekStart && (
+        <CopyScheduleModal
+          isOpen={showCopyModal}
+          onClose={() => setShowCopyModal(false)}
+          sourceWeekStart={weekStart}
+          sourcePeriodId={selectedPeriodId}
+          periods={periods}
+        />
+      )}
     </div>
   )
 }

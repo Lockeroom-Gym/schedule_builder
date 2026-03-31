@@ -1,6 +1,7 @@
 import type { SchedulePeriodEffective } from '../../types/database'
 import { formatWeekLabel } from '../../lib/dateUtils'
 import { PeriodBadge } from './PeriodBadge'
+import { CalendarDropdown } from './CalendarDropdown'
 import type { PeriodPhase } from '../../types/schedule'
 
 interface WeekNavigatorProps {
@@ -37,14 +38,23 @@ export function WeekNavigator({ periods, selectedPeriodId, onPeriodChange, phase
         </svg>
       </button>
 
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-900">
-          {currentPeriod ? formatWeekLabel(currentPeriod.week_start) : 'Select a period'}
-        </span>
-        {currentPeriod && (
-          <PeriodBadge phase={phase} isLocked={currentPeriod.is_locked || phase === 'locked'} />
-        )}
-      </div>
+      <CalendarDropdown
+        periods={periods}
+        selectedPeriodId={selectedPeriodId}
+        onPeriodChange={onPeriodChange}
+      >
+        <div className="flex items-center gap-2">
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-sm font-medium text-gray-900">
+            {currentPeriod ? formatWeekLabel(currentPeriod.week_start) : 'Select a period'}
+          </span>
+          {currentPeriod && (
+            <PeriodBadge phase={phase} isLocked={currentPeriod.is_locked || phase === 'locked'} />
+          )}
+        </div>
+      </CalendarDropdown>
 
       <button
         onClick={goNext}
