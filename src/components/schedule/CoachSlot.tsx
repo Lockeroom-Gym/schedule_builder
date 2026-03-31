@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { ScheduleSessionCoach, StaffMember, StaffLeave } from '../../types/database'
 import type { SessionWithCoaches } from '../../types/schedule'
 import { getInitials, hexToRgba } from '../../lib/scheduleUtils'
-import { LEAVE_TYPE_LABELS } from '../../lib/constants'
 import { useRemoveCoach } from '../../hooks/useMutateCoachAssignment'
 import { SwapCoachDropdown } from './SwapCoachDropdown'
 
@@ -21,7 +20,6 @@ interface CoachSlotFilledProps {
 export function CoachSlotFilled({
   assignment,
   isOnLeave,
-  leaveType,
   weekStart,
   isLocked,
   session,

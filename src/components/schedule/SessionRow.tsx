@@ -81,9 +81,12 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked, all
             key={sc.id}
             assignment={sc as any}
             isOnLeave={!!leaveMap[sc.coach_id]}
-            leaveType={leaveMap[sc.coach_id]}
             weekStart={weekStart}
             isLocked={isLocked}
+            session={session}
+            allSessions={allSessions}
+            staff={staff}
+            leaveData={leaveData}
           />
         ))}
 
