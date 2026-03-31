@@ -82,14 +82,15 @@ export function CalendarDropdown({
     weeks.push(allDays.slice(i, i + 7))
   }
 
-  const handleDayClick = (date: Date) => {
-    const period = getPeriodForDate(date)
-    if (!period) return
-    const phase = getPeriodPhase(period.week_start)
-    if (period.is_locked || phase === 'locked') return
-    onPeriodChange(period.id)
-    setIsOpen(false)
-  }
+  // The following was unused but keeping the logic in case it's needed later
+  // const handleDayClick = (date: Date) => {
+  //   const period = getPeriodForDate(date)
+  //   if (!period) return
+  //   const phase = getPeriodPhase(period.week_start)
+  //   if (period.is_locked || phase === 'locked') return
+  //   onPeriodChange(period.id)
+  //   setIsOpen(false)
+  // }
 
   const getDayStyle = (date: Date): {
     inCurrentMonth: boolean

@@ -19,7 +19,7 @@ export function CopyScheduleModal({
   isOpen,
   onClose,
   sourceWeekStart,
-  sourcePeriodId,
+  // sourcePeriodId is available if needed
   periods,
 }: CopyScheduleModalProps) {
   const [mode, setMode] = useState<CopyMode>('specific')
