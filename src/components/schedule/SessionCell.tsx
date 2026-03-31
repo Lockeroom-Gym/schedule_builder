@@ -80,11 +80,13 @@ export function SessionCell({
 
   const flowColor = FLOW_COLORS[flowLabel] || FLOW_COLORS['A']
 
+  const isAnyMenuOpen = flowMenuOpen || assigningSlot !== null
+
   return (
     <div
       className={`rounded border transition-all group relative pr-6 ${
         isSelected ? 'bg-blue-50' : 'bg-white hover:shadow-sm'
-      }`}
+      } ${isAnyMenuOpen ? 'z-50 shadow-md' : 'z-10'}`}
       style={{
         borderColor: isSelected ? '#93c5fd' : '#e5e7eb',
         borderLeftWidth: 3,
