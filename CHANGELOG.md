@@ -17,8 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Applying state-based location restrictions (e.g. VIC vs NSW).
 
 ### Changed
-- **Session Styling:** Applied tinted backgrounds to session cards based on their class type for better visual distinction.
-- **Coach Slot UI:** Normal coach slots now have a white background for better readability.
+- **Session Styling:** Applied tinted backgrounds to session cards based on their class type for better visual distinction. Increased the background color intensity for session cards to make them clear and prominent, and changed class type labels to uppercase for readability.
+- **Coach Slot UI:** Normal coach slots and interactive elements now have a solid white background for contrast against tinted session cards.
 - **Compact UI:** Tightened the spacing in the Swap/Assign dropdowns to fit more information efficiently.
 
 ### Fixed
