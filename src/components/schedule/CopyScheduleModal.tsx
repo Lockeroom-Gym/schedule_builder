@@ -1,17 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { parseISO, format } from 'date-fns'
 import { Modal } from '../ui/Modal'
 import { useCopySchedule } from '../../hooks/useCopySchedule'
 import { formatWeekLabel } from '../../lib/dateUtils'
 import type { SchedulePeriodEffective } from '../../types/database'
 
-type CopyMode = 'specific' | 'count' | 'cycle-end'
+type CopyMode = 'single' | 'multiple' | 'cycle-end'
 
 interface CopyScheduleModalProps {
   isOpen: boolean
   onClose: () => void
   sourceWeekStart: string
-  sourcePeriodId: string
   periods: SchedulePeriodEffective[]
 }
 
@@ -19,12 +18,11 @@ export function CopyScheduleModal({
   isOpen,
   onClose,
   sourceWeekStart,
-  // sourcePeriodId is available if needed
   periods,
 }: CopyScheduleModalProps) {
-  const [mode, setMode] = useState<CopyMode>('specific')
-  const [specificPeriodId, setSpecificPeriodId] = useState<string>('')
-  const [weekCount, setWeekCount] = useState<number>(1)
+  const [mode, setMode] = useState<CopyMode>('single')
+  const [startPeriodId, setStartPeriodId] = useState<string>('')
+  const [weekCount, setWeekCount] = useState<number>(2)
   const [isDone, setIsDone] = useState(false)
   const [result, setResult] = useState<{ weeks: number; sessions: number } | null>(null)
 
@@ -37,20 +35,49 @@ export function CopyScheduleModal({
       .sort((a, b) => (a.week_start > b.week_start ? 1 : -1))
   }, [periods, sourceWeekStart])
 
+  // Initialize startPeriodId when modal opens or futurePeriods changes
+  useEffect(() => {
+    if (isOpen && !startPeriodId && futurePeriods.length > 0) {
+      setStartPeriodId(futurePeriods[0].id)
+    }
+  }, [isOpen, futurePeriods, startPeriodId])
+
+  // Reset state when closed
+  const handleClose = () => {
+    setMode('single')
+    setStartPeriodId('')
+    setWeekCount(2)
+    setIsDone(false)
+    setResult(null)
+    reset()
+    onClose()
+  }
+
+  // Calculate available future periods from the selected start period
+  const validFuturePeriods = useMemo(() => {
+    if (!startPeriodId) return []
+    const startIndex = futurePeriods.findIndex((p) => p.id === startPeriodId)
+    if (startIndex === -1) return []
+    return futurePeriods.slice(startIndex)
+  }, [startPeriodId, futurePeriods])
+
+  const maxAvailableWeeks = validFuturePeriods.length
+
   // Compute the target week_starts based on the selected mode
   const targetWeekStarts = useMemo((): string[] => {
-    if (mode === 'specific') {
-      const p = periods.find((x) => x.id === specificPeriodId)
-      return p ? [p.week_start] : []
+    if (validFuturePeriods.length === 0) return []
+
+    if (mode === 'single') {
+      return [validFuturePeriods[0].week_start]
     }
-    if (mode === 'count') {
-      return futurePeriods.slice(0, weekCount).map((p) => p.week_start)
+    if (mode === 'multiple') {
+      return validFuturePeriods.slice(0, weekCount).map((p) => p.week_start)
     }
     if (mode === 'cycle-end') {
-      return futurePeriods.map((p) => p.week_start)
+      return validFuturePeriods.map((p) => p.week_start)
     }
     return []
-  }, [mode, specificPeriodId, weekCount, futurePeriods, periods])
+  }, [mode, validFuturePeriods, weekCount])
 
   const handleCopy = async () => {
     if (targetWeekStarts.length === 0) return
@@ -63,16 +90,6 @@ export function CopyScheduleModal({
     }
   }
 
-  const handleClose = () => {
-    setMode('specific')
-    setSpecificPeriodId('')
-    setWeekCount(1)
-    setIsDone(false)
-    setResult(null)
-    reset()
-    onClose()
-  }
-
   const canConfirm = targetWeekStarts.length > 0 && !isPending
 
   // Friendly label for a week_start
@@ -80,8 +97,6 @@ export function CopyScheduleModal({
     const d = parseISO(ws)
     return `Week of ${format(d, 'EEE d MMM yyyy')}`
   }
-
-  const maxWeekCount = futurePeriods.length
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Copy Schedule to Future Weeks" size="md">
@@ -123,94 +138,96 @@ export function CopyScheduleModal({
             </div>
           </div>
 
-          {/* Copy mode selection */}
+          {/* Start week selection */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Copy to</p>
-            <div className="space-y-2">
-              {/* Specific week */}
-              <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'specific' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input
-                  type="radio"
-                  className="mt-0.5 accent-blue-600"
-                  checked={mode === 'specific'}
-                  onChange={() => setMode('specific')}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Specific week</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Copy this schedule to one target week.</p>
-                  {mode === 'specific' && (
-                    <div className="mt-2">
-                      {futurePeriods.length === 0 ? (
-                        <p className="text-xs text-amber-600 font-medium">No future weeks available in this cycle.</p>
-                      ) : (
-                        <select
-                          value={specificPeriodId}
-                          onChange={(e) => setSpecificPeriodId(e.target.value)}
-                          className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
-                        >
-                          <option value="">Select a week…</option>
-                          {futurePeriods.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {weekLabel(p.week_start)}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </label>
-
-              {/* Set number of weeks */}
-              <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'count' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input
-                  type="radio"
-                  className="mt-0.5 accent-blue-600"
-                  checked={mode === 'count'}
-                  onChange={() => setMode('count')}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Next X weeks</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Copy this schedule to the next consecutive weeks.</p>
-                  {mode === 'count' && (
-                    <div className="flex items-center gap-2 mt-2">
-                      {maxWeekCount === 0 ? (
-                        <p className="text-xs text-amber-600 font-medium">No future weeks available.</p>
-                      ) : (
-                        <>
-                          <input
-                            type="number"
-                            min={1}
-                            max={maxWeekCount}
-                            value={weekCount}
-                            onChange={(e) => setWeekCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), maxWeekCount))}
-                            className="w-20 text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 font-medium text-center"
-                          />
-                          <span className="text-xs text-gray-500">of {maxWeekCount} available future weeks</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </label>
-
-              {/* Until end of cycle */}
-              <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'cycle-end' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input
-                  type="radio"
-                  className="mt-0.5 accent-blue-600"
-                  checked={mode === 'cycle-end'}
-                  onChange={() => setMode('cycle-end')}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Until end of cycle</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Copy to all {futurePeriods.length} remaining weeks in this cycle.
-                  </p>
-                </div>
-              </label>
-            </div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Start pasting from</p>
+            {futurePeriods.length === 0 ? (
+              <p className="text-xs text-amber-600 font-medium">No future weeks available in this cycle.</p>
+            ) : (
+              <select
+                value={startPeriodId}
+                onChange={(e) => {
+                  setStartPeriodId(e.target.value)
+                  // Adjust weekCount if it exceeds the new maxAvailableWeeks
+                  const newStartIndex = futurePeriods.findIndex((p) => p.id === e.target.value)
+                  const newMax = futurePeriods.length - newStartIndex
+                  if (weekCount > newMax) setWeekCount(Math.max(1, newMax))
+                }}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 font-medium"
+              >
+                {futurePeriods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {weekLabel(p.week_start)}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {/* Copy mode selection */}
+          {futurePeriods.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Duration</p>
+              <div className="space-y-2">
+                {/* Single week */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'single' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input
+                    type="radio"
+                    className="mt-0.5 accent-blue-600"
+                    checked={mode === 'single'}
+                    onChange={() => setMode('single')}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">Just this week</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Copy only to the selected start week.</p>
+                  </div>
+                </label>
+
+                {/* Multiple weeks */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'multiple' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input
+                    type="radio"
+                    className="mt-0.5 accent-blue-600"
+                    checked={mode === 'multiple'}
+                    onChange={() => setMode('multiple')}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">Set number of weeks</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Copy to multiple consecutive weeks.</p>
+                    {mode === 'multiple' && (
+                      <div className="flex items-center gap-2 mt-2" onClick={(e) => e.preventDefault()}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={maxAvailableWeeks}
+                          value={weekCount}
+                          onChange={(e) => setWeekCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), maxAvailableWeeks))}
+                          className="w-20 text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 font-medium text-center"
+                        />
+                        <span className="text-xs text-gray-500">of {maxAvailableWeeks} available weeks from start</span>
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                {/* Until end of cycle */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${mode === 'cycle-end' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input
+                    type="radio"
+                    className="mt-0.5 accent-blue-600"
+                    checked={mode === 'cycle-end'}
+                    onChange={() => setMode('cycle-end')}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">Until end of cycle</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Copy to all {maxAvailableWeeks} remaining weeks from the start week.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Preview of target weeks */}
           {targetWeekStarts.length > 0 && (
