@@ -33,6 +33,7 @@ interface ScheduleGridProps {
 export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: ScheduleGridProps) {
   const [selectedGyms, setSelectedGyms] = useState<string[]>([])
   const [selectedSessionTypes, setSelectedSessionTypes] = useState<string[]>([])
+  const [selectedFlows, setSelectedFlows] = useState<string[]>([])
   const [addSessionDay, setAddSessionDay] = useState<DayName | null>(null)
   const [collapsedDays, setCollapsedDays] = useState<Set<DayName>>(new Set())
   const [showCoaches, setShowCoaches] = useState(true)
@@ -57,8 +58,10 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
     if (selectedGyms.length > 0) list = list.filter((s) => selectedGyms.includes(s.gym))
     if (selectedSessionTypes.length > 0)
       list = list.filter((s) => selectedSessionTypes.includes(s.session_type_id))
+    if (selectedFlows.length > 0)
+      list = list.filter((s) => selectedFlows.includes(s.flow_label || 'A'))
     return list
-  }, [sessions, selectedGyms, selectedSessionTypes])
+  }, [sessions, selectedGyms, selectedSessionTypes, selectedFlows])
 
   // All unique session times across the filtered week, sorted chronologically
   const allTimes = useMemo(() => {
@@ -141,6 +144,8 @@ export function ScheduleGrid({ periods, selectedPeriodId, onPeriodChange }: Sche
             onGymsChange={setSelectedGyms}
             selectedSessionTypes={selectedSessionTypes}
             onSessionTypesChange={setSelectedSessionTypes}
+            selectedFlows={selectedFlows}
+            onFlowsChange={setSelectedFlows}
             sessionTypes={sessionTypes}
           />
 

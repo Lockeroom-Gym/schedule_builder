@@ -8,6 +8,13 @@ import { GYM_COLORS } from '../../lib/constants'
 
 const FLOW_OPTIONS = ['A', 'B', 'C', 'D']
 
+const FLOW_COLORS: Record<string, { bg: string, text: string, border: string }> = {
+  'A': { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' }, // blue
+  'B': { bg: '#f3e8ff', text: '#7e22ce', border: '#d8b4fe' }, // purple
+  'C': { bg: '#fce7f3', text: '#c026d3', border: '#fbcfe8' }, // pink
+  'D': { bg: '#ffedd5', text: '#c2410c', border: '#fed7aa' }, // orange
+}
+
 interface SessionCellProps {
   session: SessionWithCoaches
   weekStart: string
@@ -38,7 +45,6 @@ export function SessionCell({
   const updateFlow = useUpdateSessionFlow()
 
   const flowLabel = session.flow_label ?? 'A'
-  const isStaggered = flowLabel !== 'A'
 
   useEffect(() => {
     if (!flowMenuOpen) return
@@ -72,9 +78,11 @@ export function SessionCell({
     deleteSession.mutate({ sessionId: session.id, weekStart })
   }
 
+  const flowColor = FLOW_COLORS[flowLabel] || FLOW_COLORS['A']
+
   return (
     <div
-      className={`rounded border transition-all group relative ${
+      className={`rounded border transition-all group relative pr-6 ${
         isSelected ? 'bg-blue-50' : 'bg-white hover:shadow-sm'
       }`}
       style={{
@@ -83,6 +91,39 @@ export function SessionCell({
         borderLeftColor: gymConfig.border,
       }}
     >
+      {/* Right-edge flow bar */}
+      <div 
+        className="absolute right-0 top-0 bottom-0 flex flex-col items-center justify-center border-l rounded-r overflow-visible z-10"
+        style={{ width: '24px', backgroundColor: flowColor.bg, borderColor: flowColor.border, color: flowColor.text }}
+        ref={flowMenuRef}
+      >
+        <button 
+          onClick={(e) => { e.stopPropagation(); if (!isLocked) setFlowMenuOpen((o) => !o) }}
+          disabled={updateFlow.isPending || isLocked}
+          className="flex items-center justify-center w-full h-full text-[10px] font-bold"
+          title={isLocked ? `${flowLabel} flow` : "Change flow"}
+        >
+          {flowLabel}
+        </button>
+        {flowMenuOpen && !isLocked && (
+          <div className="absolute z-50 top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden w-24">
+            {FLOW_OPTIONS.map((opt) => {
+              const optColor = FLOW_COLORS[opt] || FLOW_COLORS['A']
+              return (
+                <button
+                  key={opt}
+                  onClick={(e) => { e.stopPropagation(); handleFlowChange(opt) }}
+                  className={`w-full text-left px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-50 flex items-center gap-2`}
+                >
+                  <span className="w-3 h-3 rounded flex-shrink-0" style={{ backgroundColor: optColor.bg, border: `1px solid ${optColor.border}` }} />
+                  <span className={opt === flowLabel ? 'font-bold' : 'text-gray-700'}>{opt}-flow</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Info line */}
       <div className="flex items-center gap-1 px-1.5 py-1 min-h-[26px]">
         {/* Selection checkbox */}
@@ -117,48 +158,6 @@ export function SessionCell({
         <span className="text-[9px] text-gray-500 leading-none flex-shrink-0 whitespace-nowrap">
           <span className="font-semibold text-gray-700">{session.total_spots}</span>sp
         </span>
-
-        {/* Flow label — always visible; staggered sessions get violet styling */}
-        {!isLocked && (
-          <div className="relative flex-shrink-0" ref={flowMenuRef}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setFlowMenuOpen((o) => !o) }}
-              disabled={updateFlow.isPending}
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none whitespace-nowrap transition-colors"
-              style={
-                isStaggered
-                  ? { backgroundColor: '#ede9fe', color: '#7c3aed' }
-                  : { backgroundColor: '#f3f4f6', color: '#6b7280' }
-              }
-              title="Change flow"
-            >
-              {flowLabel}-flow
-            </button>
-            {flowMenuOpen && (
-              <div className="absolute z-50 top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden w-24">
-                {FLOW_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={(e) => { e.stopPropagation(); handleFlowChange(opt) }}
-                    className={`w-full text-left px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-50 ${
-                      opt === flowLabel ? 'text-violet-700 bg-violet-50' : 'text-gray-700'
-                    }`}
-                  >
-                    {opt}-flow
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {isLocked && isStaggered && (
-          <span
-            className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
-            style={{ backgroundColor: '#ede9fe', color: '#7c3aed' }}
-          >
-            {flowLabel}-flow
-          </span>
-        )}
 
         {/* Peak indicator */}
         {session.is_peak && (
