@@ -124,18 +124,18 @@ export function SessionCell({
 
   return (
     <div
-      className={`rounded border transition-all group relative pr-6 ${
+      className={`rounded border transition-all group relative pl-6 ${
         isSelected ? 'bg-blue-50' : 'bg-white hover:shadow-sm'
       } ${isAnyMenuOpen ? 'z-50 shadow-md' : 'z-10'}`}
       style={{
         borderColor: isSelected ? '#93c5fd' : '#e5e7eb',
-        borderLeftWidth: 3,
-        borderLeftColor: gymConfig.border,
+        borderRightWidth: 3,
+        borderRightColor: gymConfig.border,
       }}
     >
-      {/* Right-edge flow bar */}
+      {/* Left-edge flow bar */}
       <div 
-        className="absolute right-0 top-0 bottom-0 flex flex-col items-center justify-center border-l rounded-r overflow-visible z-10"
+        className="absolute left-0 top-0 bottom-0 flex flex-col items-center justify-center border-r rounded-l overflow-visible z-10"
         style={{ width: '24px', backgroundColor: flowColor.bg, borderColor: flowColor.border, color: flowColor.text }}
         ref={flowMenuRef}
       >
@@ -148,7 +148,7 @@ export function SessionCell({
           {flowLabel}
         </button>
         {flowMenuOpen && !isLocked && (
-          <div className="absolute z-50 top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden w-24">
+          <div className="absolute z-50 top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden w-24">
             {FLOW_OPTIONS.map((opt) => {
               const optColor = FLOW_COLORS[opt] || FLOW_COLORS['A']
               return (
@@ -261,6 +261,10 @@ export function SessionCell({
               leaveType={leaveMap[sc.coach_id]}
               weekStart={weekStart}
               isLocked={isLocked}
+              session={session}
+              allSessions={allSessions}
+              staff={staff}
+              leaveData={leaveData}
             />
           ))}
           {!isLocked && (

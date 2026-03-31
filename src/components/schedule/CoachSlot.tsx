@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import type { ScheduleSessionCoach, StaffMember } from '../../types/database'
+import type { ScheduleSessionCoach, StaffMember, StaffLeave } from '../../types/database'
+import type { SessionWithCoaches } from '../../types/schedule'
 import { getInitials, hexToRgba } from '../../lib/scheduleUtils'
 import { LEAVE_TYPE_LABELS } from '../../lib/constants'
 import { useRemoveCoach } from '../../hooks/useMutateCoachAssignment'
+import { SwapCoachDropdown } from './SwapCoachDropdown'
 
 interface CoachSlotFilledProps {
   assignment: ScheduleSessionCoach & { coach: StaffMember }
@@ -10,6 +12,10 @@ interface CoachSlotFilledProps {
   leaveType?: string
   weekStart: string
   isLocked: boolean
+  session?: SessionWithCoaches
+  allSessions?: SessionWithCoaches[]
+  staff?: StaffMember[]
+  leaveData?: StaffLeave[]
 }
 
 export function CoachSlotFilled({
@@ -18,8 +24,13 @@ export function CoachSlotFilled({
   leaveType,
   weekStart,
   isLocked,
+  session,
+  allSessions,
+  staff,
+  leaveData,
 }: CoachSlotFilledProps) {
   const [hovered, setHovered] = useState(false)
+  const [swapMenuOpen, setSwapMenuOpen] = useState(false)
   const removeCoach = useRemoveCoach()
   const colour = assignment.coach.rgb_colour ?? '#6366f1'
 
@@ -32,18 +43,36 @@ export function CoachSlotFilled({
 
   if (isOnLeave) {
     return (
-      <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-200 rounded-md">
-        <div className="w-5 h-5 rounded-full bg-red-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-[9px] text-red-600 font-bold">{getInitials(assignment.coach.coach_name)}</span>
-        </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium text-red-500 truncate leading-none">
-            {(assignment.coach.coach_name ?? '').split(' ')[0] || '?'}
-          </p>
-          <p className="text-[9px] text-red-400 italic leading-none mt-0.5">
-            {leaveType ? LEAVE_TYPE_LABELS[leaveType] ?? 'Leave' : 'Leave'}
-          </p>
-        </div>
+      <div className="relative">
+        <button
+          onClick={(e) => { e.stopPropagation(); if (!isLocked) setSwapMenuOpen((o) => !o) }}
+          className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border-2 border-red-500 rounded-md hover:bg-red-100 transition-colors shadow-sm relative group"
+        >
+          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 animate-pulse">
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="min-w-0 text-left">
+            <p className="text-[10px] font-bold text-red-700 truncate leading-none">
+              {(assignment.coach.coach_name ?? '').split(' ')[0] || '?'}
+            </p>
+            <p className="text-[9px] font-bold text-red-600 uppercase tracking-wide leading-none mt-0.5">
+              Swap Req.
+            </p>
+          </div>
+        </button>
+        {swapMenuOpen && !isLocked && session && allSessions && staff && leaveData && (
+           <SwapCoachDropdown
+              assignment={assignment}
+              session={session}
+              allSessions={allSessions}
+              staff={staff}
+              leaveData={leaveData}
+              weekStart={weekStart}
+              onClose={() => setSwapMenuOpen(false)}
+           />
+        )}
       </div>
     )
   }

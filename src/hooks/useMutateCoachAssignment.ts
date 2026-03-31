@@ -54,3 +54,29 @@ export function useRemoveCoach() {
     },
   })
 }
+
+interface SwapCoachPayload {
+  assignmentId: string
+  newCoachId: string
+  weekStart: string
+}
+
+export function useSwapCoach() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: SwapCoachPayload) => {
+      const { data, error } = await supabase
+        .from('schedule_session_coaches')
+        .update({ coach_id: payload.newCoachId })
+        .eq('id', payload.assignmentId)
+        .select('*, coach:staff_database(*)')
+        .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['session-coaches', variables.weekStart] })
+    },
+  })
+}
