@@ -5,6 +5,7 @@ import { CoachSlotFilled, CoachSlotEmpty } from './CoachSlot'
 import { CoachAssignDropdown } from './CoachAssignDropdown'
 import { formatTime } from '../../lib/dateUtils'
 import { useDeleteSession } from '../../hooks/useMutateSession'
+import { getSessionCardStyle } from '../../lib/scheduleUtils'
 
 interface SessionRowProps {
   session: SessionWithCoaches
@@ -30,16 +31,18 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked, all
   const leaveMap: Record<string, string> = {}
   for (const l of leaveOnDate) leaveMap[l.staff_id] = l.leave_type
 
+  const sessionTypeLabel = session.session_type?.label ?? '?'
   const sessionTypeColor = session.session_type?.color_hex ?? '#6366f1'
   const isDraft = session.status === 'proposed'
   const isAnyMenuOpen = assigningSlot !== null || swapMenuOpenCoachId !== null
+  const cardStyle = getSessionCardStyle(session.session_type?.label, sessionTypeColor)
 
   return (
     <div
-      className={`flex items-start gap-2 px-3 py-2 border-b border-gray-50 hover:bg-gray-50/50 group transition-colors relative ${
+      className={`flex items-start gap-2 px-3 py-2 border-b border-gray-50 group transition-colors relative ${
         isDraft ? 'border-l-2 border-l-dashed' : 'border-l-2'
       } ${isAnyMenuOpen ? 'z-50' : 'z-10'}`}
-      style={{ borderLeftColor: sessionTypeColor }}
+      style={{ borderLeftColor: sessionTypeColor, backgroundColor: cardStyle.bg }}
     >
       {/* Time */}
       <div className="w-12 flex-shrink-0 pt-0.5">
@@ -49,13 +52,10 @@ export function SessionRow({ session, weekStart, staff, leaveData, isLocked, all
       {/* Session type */}
       <div className="w-16 flex-shrink-0 pt-0.5">
         <span
-          className="text-xs font-semibold px-1.5 py-0.5 rounded"
-          style={{
-            backgroundColor: `${sessionTypeColor}18`,
-            color: sessionTypeColor,
-          }}
+          className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded"
+          style={{ color: cardStyle.text }}
         >
-          {session.session_type?.label ?? '?'}
+          {sessionTypeLabel}
         </span>
       </div>
 

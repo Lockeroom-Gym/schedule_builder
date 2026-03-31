@@ -127,7 +127,7 @@ interface CoachSlotEmptyProps {
 export function CoachSlotEmpty({ onClick, isLocked }: CoachSlotEmptyProps) {
   if (isLocked) {
     return (
-      <div className="w-16 h-7 border border-dashed border-gray-200 rounded-md flex items-center justify-center">
+      <div className="w-16 h-7 bg-white/50 border border-dashed border-gray-200 rounded-md flex items-center justify-center">
         <span className="text-[10px] text-gray-300">—</span>
       </div>
     )
@@ -136,7 +136,7 @@ export function CoachSlotEmpty({ onClick, isLocked }: CoachSlotEmptyProps) {
   return (
     <button
       onClick={onClick}
-      className="w-16 h-7 border border-dashed border-gray-300 rounded-md flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors group"
+      className="w-16 h-7 bg-white shadow-sm border border-dashed border-gray-300 rounded-md flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors group"
     >
       <svg
         className="w-3 h-3 text-gray-300 group-hover:text-blue-500 transition-colors"

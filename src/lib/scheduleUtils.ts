@@ -89,6 +89,16 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
+export function getSessionCardStyle(label: string | undefined, defaultColor: string): { bg: string, text: string } {
+  if (!label) return { bg: hexToRgba(defaultColor, 0.1), text: defaultColor }
+  const l = label.toLowerCase()
+  if (l.includes('perform')) return { bg: '#eff6ff', text: '#2563eb' }
+  if (l.includes('vo2')) return { bg: '#f3f4f6', text: '#4b5563' }
+  if (l.includes('box')) return { bg: '#fff7ed', text: '#ea580c' }
+  if (l.includes('squad')) return { bg: '#ecfdf5', text: '#059669' }
+  return { bg: hexToRgba(defaultColor, 0.1), text: defaultColor }
+}
+
 /**
  * Returns all sessions (from allSessions) where the given coach is already
  * assigned to a session on the same day that has a DIFFERENT flow_label than

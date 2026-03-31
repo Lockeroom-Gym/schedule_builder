@@ -7,6 +7,8 @@ import { useDeleteSession, useUpdateSessionFlow, useUpdateSessionTime } from '..
 import { GYM_COLORS } from '../../lib/constants'
 import { formatTime } from '../../lib/dateUtils'
 
+import { getSessionCardStyle } from '../../lib/scheduleUtils'
+
 const FLOW_OPTIONS = ['A', 'B', 'C', 'D']
 
 const FLOW_COLORS: Record<string, { bg: string, text: string, border: string }> = {
@@ -106,7 +108,9 @@ export function SessionCell({
 
   const gymConfig = GYM_COLORS[session.gym] ?? { border: '#9ca3af', label: session.gym }
   const sessionTypeColor = session.session_type?.color_hex ?? '#6366f1'
+  const sessionTypeLabel = session.session_type?.label ?? '?'
   const isDraft = session.status === 'proposed'
+  const cardStyle = getSessionCardStyle(session.session_type?.label, sessionTypeColor)
 
   const assignedIds = session.coaches.map((c) => c.coach_id)
   const leaveOnDate = leaveData.filter((l) => l.leave_date === session.session_date)
@@ -126,9 +130,10 @@ export function SessionCell({
   return (
     <div
       className={`rounded border transition-all group relative pl-6 ${
-        isSelected ? 'bg-blue-50' : 'bg-white hover:shadow-sm'
+        isSelected ? 'ring-2 ring-blue-400 ring-inset shadow-sm' : 'hover:shadow-sm'
       } ${isAnyMenuOpen ? 'z-50 shadow-md' : 'z-10'}`}
       style={{
+        backgroundColor: isSelected ? '#dbeafe' : cardStyle.bg,
         borderColor: isSelected ? '#93c5fd' : '#e5e7eb',
         borderRightWidth: 3,
         borderRightColor: gymConfig.border,
@@ -204,19 +209,16 @@ export function SessionCell({
 
         {/* Session type badge */}
         <span
-          className="text-[9px] font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
-          style={{
-            backgroundColor: `${sessionTypeColor}22`,
-            color: sessionTypeColor,
-          }}
+          className="text-[10px] font-extrabold uppercase px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
+          style={{ color: cardStyle.text }}
         >
-          {session.session_type?.label ?? '?'}
+          {sessionTypeLabel}
         </span>
 
         {/* Gym badge */}
         <span
-          className="text-[9px] font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap"
-          style={{ color: gymConfig.border, backgroundColor: `${gymConfig.border}18` }}
+          className="text-[9px] font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap bg-white shadow-sm border"
+          style={{ color: gymConfig.border, borderColor: `${gymConfig.border}33` }}
         >
           {gymConfig.label}
         </span>
@@ -278,7 +280,7 @@ export function SessionCell({
             <div className="relative">
               <button
                 onClick={() => setAssigningSlot(session.coaches.length + 1)}
-                className="w-7 h-6 border border-dashed border-gray-300 rounded flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-500"
+                className="w-7 h-6 bg-white shadow-sm border border-dashed border-gray-300 rounded flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-500"
                 title="Assign coach"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
