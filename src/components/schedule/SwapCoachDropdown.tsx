@@ -93,15 +93,34 @@ export function SwapCoachDropdown({
   // Get options
   const swapOptions = useMemo(() => {
     const targetTimeMin = timeToMinutes(session.session_time)
+    const targetDuration = session.session_type?.duration_minutes ?? 60
+    const targetEndMin = targetTimeMin + targetDuration
 
-    // Find all coaches working within 39 minutes of this session on the same day
+    // 1. Find coaches working within 39 minutes
+    // 2. Calculate the min start and max end times for every coach on this day
     const unavailableCoachIds = new Set<string>()
+    const coachDaySpans: Record<string, { minStart: number, maxEnd: number }> = {}
+
     for (const s of allSessions) {
       if (s.day_name === session.day_name) {
         const sTimeMin = timeToMinutes(s.session_time)
-        if (Math.abs(sTimeMin - targetTimeMin) <= 39) {
-          for (const c of s.coaches) {
-            unavailableCoachIds.add(c.coach_id)
+        const sDuration = s.session_type?.duration_minutes ?? 60
+        const sEndMin = sTimeMin + sDuration
+
+        for (const c of s.coaches) {
+          const cid = c.coach_id
+          
+          // Check 39-minute overlap rule
+          if (Math.abs(sTimeMin - targetTimeMin) <= 39) {
+            unavailableCoachIds.add(cid)
+          }
+
+          // Track min/max times for the span calculation
+          if (!coachDaySpans[cid]) {
+            coachDaySpans[cid] = { minStart: sTimeMin, maxEnd: sEndMin }
+          } else {
+            coachDaySpans[cid].minStart = Math.min(coachDaySpans[cid].minStart, sTimeMin)
+            coachDaySpans[cid].maxEnd = Math.max(coachDaySpans[cid].maxEnd, sEndMin)
           }
         }
       }
@@ -112,6 +131,18 @@ export function SwapCoachDropdown({
       .filter((s) => !alreadyAssignedIds.has(s.id))
       .filter((s) => !leaveOnDate.has(s.id))
       .filter((s) => !unavailableCoachIds.has(s.id)) // Exclude if already coaching within 39m
+      .filter((s) => {
+        // Enforce 10-hour (600 minute) maximum span rule
+        const span = coachDaySpans[s.id]
+        if (span) {
+          const newMinStart = Math.min(span.minStart, targetTimeMin)
+          const newMaxEnd = Math.max(span.maxEnd, targetEndMin)
+          if (newMaxEnd - newMinStart > 600) {
+            return false // Span exceeds 10 hours
+          }
+        }
+        return true
+      })
       .filter((s) => {
         // State-based location restrictions
         if (session.gym === 'COLLINS') return s.state === 'VIC'
